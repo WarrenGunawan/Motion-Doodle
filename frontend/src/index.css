@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+body {
+    font-family: 'JetBrains Mono', monospace;
+    background-color: #FFEDCE;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.color1 {
+    background-color: #FFEDCE;
+}
+
+.color2 {
+    background-color: #FFC193;
+}
+
+.color3 {
+    background-color: #FF8383;
+}
+
+.color4 {
+    background-color: #FF3737;
+}
