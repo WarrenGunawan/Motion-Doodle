@@ -1,24 +1,47 @@
 import { useState, useEffect } from 'react';
 
+import socket from '../socket'
 
 
-function Home({onUsernameChosen, onLobbyCodeSelected, onLobbyStarted, onStartButton}) {
+function Home({onUsernameChosen, onLobbyCodeSelected, onStartLobby, onJoinLobby, onIsHost}) {
+    const [ username, setUsername ] = useState('')
+    const [ code, setCode ] = useState('')
+    const [ pressedStartLobby, setPressedStartLobby ] = useState(false)
+    const [ pressedJoinLobby, setPressedJoinLobby ] = useState(false)
+     
+
     // Check for created Lobby data
     useEffect(() => {
         socket.on('lobby_created', (data) => {
             console.log('lobby created, code:', data.code)
-            setRoomCode(data.code)
+            setCode(data.code)
         })
 
         return () => socket.off('lobby_created')
     }, [])
 
+    // Check if the code is valid
+    useEffect(() => {
+        socket.on('player_joined', (data) => {
+            onJoinLobby(true)
+        })
+
+        socket.on('error', (data) => {
+            console.log('invalid code')
+        })
+
+        return () => {
+            socket.off('player_joined')
+            socket.off('error')
+        }
+    }, [])
 
 
-    function checkUsername(name) {
-        setUsername(name)
 
-        if(name === '') {
+    function checkUsername(username) {
+        setUsername(username)
+
+        if(username === '') {
             onUsernameChosen(false)
         } else {
             onUsernameChosen(true)
@@ -26,8 +49,8 @@ function Home({onUsernameChosen, onLobbyCodeSelected, onLobbyStarted, onStartBut
     }
 
 
-    function checkRoomCode(code) {
-        setRoomCode(code)
+    function checkCode(code) {
+        setCode(code)
 
         if(code === '') {
             onLobbyCodeSelected(false)
@@ -37,44 +60,33 @@ function Home({onUsernameChosen, onLobbyCodeSelected, onLobbyStarted, onStartBut
     }
 
     function checkStartLobby() {
-        if(isChecked) {
-            setIsChecked(false)
-            onLobbyStarted(false)
-        } else {
-            setIsChecked(true)
-            onLobbyStarted(true)
-        }
+        setPressedStartLobby(true)
+        onStartLobby(true)
+        onIsHost(true)
+
+        createdLobby(username)
     }
 
-    function checkStartButton() {
-        onStartButton(true)
+    function checkJoinLobby() {
+        setPressedJoinLobby(true)
+        onJoinLobby(true)
+        onIsHost(false)
+
+        joinedLobby(username, code)
     }
 
-
-
-
-    const [ username, setUsername ] = useState('')
-    const [ roomCode, setRoomCode ] = useState('')
-    const [ isChecked, setIsChecked ] = useState(false)
 
 
     // Create a Lobby with Socket
-    function createLobby(username) {
+    function createdLobby(username) {
         socket.emit('create_lobby', {username})
     }
 
-    // function joinLobby(username, code) {
-    //     socket.emit('join_lobby', { username, code })
-        
-    //     socket.on('player_joined', (data) => {
-    //         console.log('players:', data.players)
-    //         // update player list state
-    //     })
-        
-    //     socket.on('error', (data) => {
-    //         console.log('error:', data.message)
-    //     })
-    // }
+    // Join lobby with socket
+    function joinedLobby(username, roomCode) {
+        socket.emit('join_lobby', {username, roomCode})
+    }
+    
 
 
 
@@ -83,12 +95,10 @@ function Home({onUsernameChosen, onLobbyCodeSelected, onLobbyStarted, onStartBut
             <div className='flex justify-center items-center color3 p-2 rounded-lg'>
                 <div className='flex flex-col justify-center items-center color2 p-4 rounded-lg'>
                     <input className='my-2' value={username} onChange={e => checkUsername(e.target.value)} placeholder='Username' />
-                    <div className='flex my-2'>
-                        <p>Start Your Own Lobby?</p>
-                        <input type='checkbox' checked={isChecked} onChange={checkStartLobby}/>
-                    </div>
-                    <input className='my-2' value={roomCode} onChange={e => checkRoomCode(e.target.value)} placeholder='Room code' />
-                    <button className='my-2' onClick={checkStartButton} className='opacity-100 active:opacity-50 transition-opacity hover:opacity-75'>Start</button>
+                    <p>Start Your Own Lobby?</p>
+                    <button className='my-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75' onClick={checkStartLobby}>Start Lobby</button>
+                    <input className='my-2' value={code} onChange={e => checkCode(e.target.value)} placeholder='Room code' />
+                    <button className='my-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75' onClick={checkJoinLobby}>Join Lobby</button>
                 </div>
             </div>
         </div>

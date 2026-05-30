@@ -15,8 +15,11 @@ function App() {
 
   const [ userNameChosen, setUsernameChosen ] = useState(false)
   const [ lobbyCodeSelected, setLobbyCodeSelected ] = useState(false)
-  const [ lobbyStarted, setLobbyStarted ] = useState(false)
-  const [ startButton, setStartButton ] = useState(false)
+  const [ startLobby, setStartLobby ] = useState(false)
+  const [ joinLobby, setJoinLobby ] = useState(false)
+
+  const [ username, setUsername ] = useState('')
+  const [ isHost, setIsHost ] = useState(false)
 
 
 
@@ -31,14 +34,10 @@ function App() {
 
   // Rerenders page once the start button press is detected
   useEffect(() => {
-    if(startButton) {
-      if(userNameChosen && (lobbyCodeSelected || lobbyStarted)) {
-        moveToLobby()
-      }
-
-      setStartButton(false)
+    if(userNameChosen && ((lobbyCodeSelected && joinLobby) || (startLobby))) {
+      moveToLobby()
     }
-  }, [startButton])
+  }, [startLobby, joinLobby])
 
 
   // Helper Functions
@@ -49,8 +48,8 @@ function App() {
 
   return (
     <div>
-      {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} onLobbyCodeSelected={setLobbyCodeSelected} onLobbyStarted={setLobbyStarted} onStartButton={setStartButton}/>}
-      {screen === 'lobby' && <Lobby />}
+      {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} onLobbyCodeSelected={setLobbyCodeSelected} onStartLobby={setStartLobby} onJoinLobby={setJoinLobby} onIsHost={setIsHost}/>}
+      {screen === 'lobby' && <Lobby isHost={isHost} username={username}/>}
     </div>
   )
 }

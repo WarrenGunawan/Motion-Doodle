@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import Camera from './Camera'
 
-
-
+import socket from '../socket'
 
 
 function useWindowWidth() {
@@ -25,20 +24,48 @@ function useWindowWidth() {
 
 
 
-function Lobby() {
-const { width } = useWindowWidth()
-const mWidth = `${width * 0.6}px`
+function Lobby({ isHost, username }) {
+    // Player state array
+    const [ players, setPlayers ] = useState([])
 
 
-return (
-    <div className='flex items-center justify-center color4 p-1 rounded-lg mt-5'>
-        <div className='flex justify-center items-center color3 p-2 rounded-lg'>
-            <div className='flex justify-center items-center color2 p-4 rounded-lg'>
-                <Camera/>
+    // Check for lobby Code
+    useEffect(() => {
+        socket.on('player_joined', (data) => {
+            console.log('players:', data.players)
+            setPlayers(data.players)
+
+        })
+
+        socket.on('error', (data) => {
+            console.log('error:', data.message)
+        })
+
+        return () => {
+            socket.off('player_joined')
+            socket.off('error')
+        }
+    }, [])
+
+
+
+    // Dimensions of the screen
+    const { width } = useWindowWidth()
+    const mWidth = `${width * 0.6}px`
+
+
+    return (
+        <div className='flex items-center justify-center color4 p-1 rounded-lg mt-5'>
+            <div className='flex justify-center items-center color3 p-2 rounded-lg'>
+                <div className='flex justify-center items-center color2 p-4 rounded-lg'>
+                    <Camera/>
+                    {isHost == true && 
+                        <p>Poop</p>
+                    }
+                </div>
             </div>
         </div>
-    </div>
-)
+    )
 }
 
 export default Lobby
