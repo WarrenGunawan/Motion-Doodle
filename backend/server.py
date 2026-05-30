@@ -32,6 +32,8 @@ def handleDisconnect():
 
 
 
+
+
 @socketio.on('create_lobby')
 def handleCreateLobby(data):
     username = data['username']
@@ -48,23 +50,24 @@ def handleCreateLobby(data):
 
 
 
+@socketio.on('join_lobby')
+def handleJoinLobby(data):
+    username = data['username']
+    code = data['code']
 
-# @socketio.on('join_lobby')
-# def handleJoinLobby(data):
-#     username = data['username']
-#     code = data['code']
-    
-#     if code not in lobbies:
-#         emit('error', {'message': 'Lobby not found'})
-#         return
-    
-#     lobbies[code]['players'].append(username)
-#     join_room(code)
-    
-#     # tell everyone in the room the player list updated
-#     emit('player_joined', {
-#         'players': lobbies[code]['players']
-#     }, room=code)
+    if code not in lobbies():
+        emit('error', {'message': 'Lobby not Found'})
+        return
+
+    lobbies[code]['players'].append(username)
+    join_room(code)
+
+    emit('player_joined', {
+        'players': lobbies[code]['players']
+    }, room=code)
+
+
+
 
 
 if __name__ == '__main__':
