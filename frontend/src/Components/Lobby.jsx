@@ -6,19 +6,19 @@ import Camera from './Camera'
 
 
 function useWindowWidth() {
-const [size, setSize] = useState({
-    width: window.innerWidth,
-})
-
-useEffect(() => {
-    const handleResize = () => setSize({
-    width: window.innerWidth,
+    const [size, setSize] = useState({
+        width: window.innerWidth,
     })
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-}, []);
-return size
+    useEffect(() => {
+        const handleResize = () => setSize({
+        width: window.innerWidth,
+        })
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, []);
+    return size
 }
 
 

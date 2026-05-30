@@ -2,10 +2,16 @@ import { useState, useEffect } from 'react';
 import Lobby from './Components/Lobby'
 import Home from './Components/Home'
 
+import socket from './socket'
+
+
+
+
+
+
 
 function App() {
   const [ screen, setScreen ] = useState('home')
-
 
   const [ userNameChosen, setUsernameChosen ] = useState(false)
   const [ lobbyCodeSelected, setLobbyCodeSelected ] = useState(false)
@@ -14,11 +20,16 @@ function App() {
 
 
 
+  // Checks for socket connection
+  useEffect(() => {
+    socket.on('connect', () => {
+      console.log('Connected to Server, id:', socket.id)
+    })
 
-  function moveToLobby() {
-    setScreen('lobby')
-  }
+    return () => socket.off('connect')
+  }, [])
 
+  // Rerenders page once the start button press is detected
   useEffect(() => {
     if(startButton) {
       if(userNameChosen && (lobbyCodeSelected || lobbyStarted)) {
@@ -28,6 +39,12 @@ function App() {
       setStartButton(false)
     }
   }, [startButton])
+
+
+  // Helper Functions
+  function moveToLobby() {
+    setScreen('lobby')
+  }
 
 
   return (

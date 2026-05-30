@@ -3,6 +3,17 @@ import { useState, useEffect } from 'react';
 
 
 function Home({onUsernameChosen, onLobbyCodeSelected, onLobbyStarted, onStartButton}) {
+    // Check for created Lobby data
+    useEffect(() => {
+        socket.on('lobby_created', (data) => {
+            console.log('lobby created, code:', data.code)
+            setRoomCode(data.code)
+        })
+
+        return () => socket.off('lobby_created')
+    }, [])
+
+
 
     function checkUsername(name) {
         setUsername(name)
@@ -47,6 +58,23 @@ function Home({onUsernameChosen, onLobbyCodeSelected, onLobbyStarted, onStartBut
     const [ isChecked, setIsChecked ] = useState(false)
 
 
+    // Create a Lobby with Socket
+    function createLobby(username) {
+        socket.emit('create_lobby', {username})
+    }
+
+    // function joinLobby(username, code) {
+    //     socket.emit('join_lobby', { username, code })
+        
+    //     socket.on('player_joined', (data) => {
+    //         console.log('players:', data.players)
+    //         // update player list state
+    //     })
+        
+    //     socket.on('error', (data) => {
+    //         console.log('error:', data.message)
+    //     })
+    // }
 
 
 
