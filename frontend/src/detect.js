@@ -58,10 +58,8 @@ export function detectWebslinger(landmarks, w, h) {
     
     const thumbTipX = landmarks[4].x
     const indexBaseX = landmarks[5].x
-
-    // Scale threshold based on hand size instead of fixed value
     const handSize = getHandScale(landmarks, w, h)
-    const normalizedHandSize = handSize / w  // convert back to 0-1 range
+    const normalizedHandSize = handSize / w  
     const thumbUp = Math.abs(thumbTipX - indexBaseX) > normalizedHandSize * 0.3
 
     return thumbUp && index && !middle && !ring && pinky
