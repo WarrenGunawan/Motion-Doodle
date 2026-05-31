@@ -37,25 +37,25 @@ def handleDisconnect():
 @socketio.on('create_lobby')
 def handleCreateLobby(data):
     username = data['username']
-    code = generateCode
+    code = generateCode()
 
-    lobbies = {
+    lobbies[code] = {
         'host': username,
-        'players': ['username'],
+        'players': [username],
         'started': False
     }
 
     join_room(code)
-    emit('lobby_created', {'code': code, 'username': [username]})
+    emit('lobby_created', {'code': code}, room=code)
 
 
 
 @socketio.on('join_lobby')
 def handleJoinLobby(data):
     username = data['username']
-    code = data['code']
+    code = data['roomCode']
 
-    if code not in lobbies():
+    if code not in lobbies:
         emit('error', {'message': 'Lobby not Found'})
         return
 
