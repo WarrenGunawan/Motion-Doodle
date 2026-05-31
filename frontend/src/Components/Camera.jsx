@@ -129,7 +129,6 @@ export default function Camera() {
                     // Clear draw canvas only
                     if(state.clearStart === null) state.clearStart = now
                     const elapsed = now - state.clearStart
-                    console.log('webslinger detected, elapsed:', elapsed)
 
                     if (elapsed >= 1.2) {
                         drawCtx.clearRect(0, 0, w, h)
