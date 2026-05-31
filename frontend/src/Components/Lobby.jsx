@@ -24,7 +24,7 @@ function useWindowWidth() {
 
 
 
-function Lobby({ isHost, username }) {
+function Lobby({ isHost, username, code }) {
     // Player state array
     const [ players, setPlayers ] = useState([])
 
@@ -57,11 +57,12 @@ function Lobby({ isHost, username }) {
     return (
         <div className='flex items-center justify-center color4 p-1 rounded-lg mt-5'>
             <div className='flex justify-center items-center color3 p-2 rounded-lg'>
-                <div className='flex justify-center items-center color2 p-4 rounded-lg'>
-                    <Camera/>
-                    {isHost == true && 
-                        <p>Poop</p>
+                <div className='flex flex-col justify-center items-center color2 p-4 rounded-lg'>
+                    {isHost && 
+                        <p>{code}</p> 
                     }
+                    <p>{username}</p>
+                    <Camera/>
                 </div>
             </div>
         </div>
