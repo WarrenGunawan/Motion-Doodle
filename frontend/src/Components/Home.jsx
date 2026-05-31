@@ -3,26 +3,28 @@ import { useState, useEffect } from 'react';
 import socket from '../socket'
 
 
-function Home({onUsernameChosen, onLobbyCodeSelected, onStartLobby, onJoinLobby, onIsHost}) {
+function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode, onSetUsername}) {
     const [ username, setUsername ] = useState('')
     const [ code, setCode ] = useState('')
-    const [ pressedStartLobby, setPressedStartLobby ] = useState(false)
-    const [ pressedJoinLobby, setPressedJoinLobby ] = useState(false)
      
 
     // Check for created Lobby data
     useEffect(() => {
         socket.on('lobby_created', (data) => {
             console.log('lobby created, code:', data.code)
-            setCode(data.code)
+            onSetCode(data.code)
+            onSetUsername(username)
+            onStartLobby(true)
         })
 
         return () => socket.off('lobby_created')
-    }, [])
+    }, [username])
 
     // Check if the code is valid
     useEffect(() => {
         socket.on('player_joined', (data) => {
+            onSetCode(data.code)
+            onSetUsername(username)
             onJoinLobby(true)
         })
 
@@ -48,28 +50,17 @@ function Home({onUsernameChosen, onLobbyCodeSelected, onStartLobby, onJoinLobby,
         }
     }
 
-
-    function checkCode(code) {
-        setCode(code)
-
-        if(code === '') {
-            onLobbyCodeSelected(false)
-        } else {
-            onLobbyCodeSelected(true)
-        }
+    function checkCode(roomCode) {
+        setCode(roomCode)
     }
 
     function checkStartLobby() {
-        setPressedStartLobby(true)
-        onStartLobby(true)
         onIsHost(true)
 
         createdLobby(username)
     }
 
     function checkJoinLobby() {
-        setPressedJoinLobby(true)
-        onJoinLobby(true)
         onIsHost(false)
 
         joinedLobby(username, code)
