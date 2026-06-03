@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
 import { detectOneFinger, detectFiveFingers, detectWebslinger } from '../detect'
 
-export default function Camera({ camWidth, camHeight }) {
+export default function Camera({ camWidth, camHeight, canDraw }) {
     const videoRef = useRef(null)
     const videoCanvasRef = useRef(null)
     const drawCanvasRef = useRef(null)
@@ -120,6 +120,11 @@ export default function Camera({ camWidth, camHeight }) {
             videoCtx.translate(-w, 0)
             videoCtx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h)
             videoCtx.restore()
+
+            if (!canDraw) {
+                animationId = requestAnimationFrame(detect)
+                return
+            }
 
             // Run hand detection
             const results = landmarker.detectForVideo(video, performance.now())

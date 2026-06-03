@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import socket from '../socket'
 
@@ -6,36 +6,44 @@ import socket from '../socket'
 function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode, onSetUsername, onSetPlayers}) {
     const [ username, setUsername ] = useState('')
     const [ code, setCode ] = useState('')
+
+    const usernameRef = useRef(username)
+    useEffect(() => { usernameRef.current = username }, [username])
      
 
     // Check for created Lobby data
     useEffect(() => {
-        socket.on('lobby_created', (data) => {
+        function handleLobbyCreated(data) {
             onSetCode(data.code)
-            onSetUsername(username)
+            onSetUsername(usernameRef.current)
             onSetPlayers(data.players)
-            onStartLobby(true)
-        })
+            onJoinLobby(true)
+        }
 
-        return () => socket.off('lobby_created')
-    }, [username])
+        socket.on('lobby_created', handleLobbyCreated)
+
+        return () => socket.off('lobby_created', handleLobbyCreated)
+    }, [])
 
     // Check if the code is valid
     useEffect(() => {
-        socket.on('player_joined', (data) => {
+        function handlePlayerJoined(data) {
             onSetCode(data.code)
-            onSetUsername(username)
+            onSetUsername(usernameRef.current)
             onSetPlayers(data.players)
             onJoinLobby(true)
-        })
+        }
 
-        socket.on('error', (data) => {
-            console.log('invalid code')
-        })
+        function handleError(data) {
+            console.log('error:', data.message)
+        }
+
+        socket.on('player_joined', handlePlayerJoined)
+        socket.on('error', handleError)
 
         return () => {
-            socket.off('player_joined')
-            socket.off('error')
+            socket.off('player_joined', handlePlayerJoined)
+            socket.off('error', handleError)
         }
     }, [])
 
@@ -64,7 +72,9 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
     function checkJoinLobby() {
         onIsHost(false)
 
-        joinedLobby(username, code)
+        if(username) {
+            joinedLobby(username, code)
+        }
     }
 
 

@@ -27,22 +27,41 @@ function useWindowDimensions() {
 
 
 
-function Lobby({ isHost, username, code, players, setPlayers }) {
-    // Check for lobby Code
+function Lobby({ isHost, username, code, players, onSetPlayers }) {
+    // Check for new players
     useEffect(() => {
-        socket.on('player_joined', (data) => {
+        function handlePlayerJoined(data) {
             onSetPlayers(data.players)
-        })
+        }
 
-        socket.on('error', (data) => {
+        function handlePlayerLeft(data) {
+            onSetPlayers(data.players)
+        }
+
+        function handleError(data) {
             console.log('error:', data.message)
-        })
+        }
+
+        socket.on('player_left', handlePlayerLeft)
+        socket.on('player_joined', handlePlayerJoined)
+        socket.on('error', handleError)
 
         return () => {
-            socket.off('player_joined')
-            socket.off('error')
+            socket.off('player_joined', handlePlayerJoined)
+            socket.off('player_left', handlePlayerLeft)
+            socket.off('error', handleError)
         }
-    }, [players])
+    }, [])
+
+
+    // Leave the Lobby
+    useEffect(() => {
+        return () => {
+            socket.emit('leave_room', {roomCode: code})
+        }
+    }, [])
+
+
 
 
 
@@ -63,19 +82,19 @@ function Lobby({ isHost, username, code, players, setPlayers }) {
             <div className='relative flex items-center'>
                 <div className='absolute right-full flex flex-col'>
                     {players.map(p => (
-                        <div key={p} className='leading-none'>
-                            {p === username ? <Camera camWidth={miniCamWidth} camHeight={miniCamHeight} /> : <PlaceholderCam name={p} camWidth={miniCamWidth} camHeight={miniCamHeight}/>}
+                        <div key={p.id} className='leading-none'>
+                            {p.id === socket.id ? <Camera camWidth={miniCamWidth} camHeight={miniCamHeight} canDraw={false}/> : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>}
                         </div>
                     ))}
                 </div>
 
                <div>
-                    <Camera camWidth={camWidth} camHeight={camHeight} />
+                    <Camera camWidth={camWidth} camHeight={camHeight} canDraw={true}/>
                 </div>
 
                 <div className='absolute left-full flex flex-col'>
                     {players.map(p => (
-                        <div key={p}>{p}</div>
+                        <div key={p.id} className='whitespace-nowrap'>{p.username}</div>
                     ))}
                 </div>
             </div>
