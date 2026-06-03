@@ -38,6 +38,9 @@ function App() {
   useEffect(() => {
     if(userNameChosen && (joinLobby || startLobby)) {
       moveToLobby()
+    } else {
+      setJoinLobby(false)
+      setStartLobby(false)
     }
   }, [startLobby, joinLobby, userNameChosen])
 
