@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
 import { detectOneFinger, detectFiveFingers, detectWebslinger } from '../detect'
 
-export default function Camera() {
+export default function Camera({ camWidth, camHeight }) {
     const videoRef = useRef(null)
     const videoCanvasRef = useRef(null)
     const drawCanvasRef = useRef(null)
@@ -48,12 +48,10 @@ export default function Camera() {
                     videoRef.current.muted = true
                     videoRef.current.srcObject = stream
                     videoRef.current.oncanplay = () => {
-                        const w = videoRef.current.videoWidth
-                        const h = videoRef.current.videoHeight
-                        videoCanvasRef.current.width = w
-                        videoCanvasRef.current.height = h
-                        drawCanvasRef.current.width = w
-                        drawCanvasRef.current.height = h
+                        videoCanvasRef.current.width = camWidth
+                        videoCanvasRef.current.height = camHeight
+                        drawCanvasRef.current.width = camWidth
+                        drawCanvasRef.current.height = camHeight
                         videoRef.current.play()
                     }
                 }
@@ -99,10 +97,28 @@ export default function Camera() {
             const state = drawingRef.current
 
             // Draw flipped video feed onto video canvas every frame
+            const videoAspect = video.videoWidth / video.videoHeight
+            const canvasAspect = w / h
+
+            let sx, sy, sw, sh
+            if (videoAspect > canvasAspect) {
+                // video is wider than canvas — crop sides (unlikely for 9/16 but just in case)
+                sh = video.videoHeight
+                sw = sh * canvasAspect
+                sx = (video.videoWidth - sw) / 2
+                sy = 0
+            } else {
+                // video is taller than canvas — crop top/bottom (your case)
+                sw = video.videoWidth
+                sh = sw / canvasAspect
+                sx = 0
+                sy = (video.videoHeight - sh) / 2
+            }
+
             videoCtx.save()
             videoCtx.scale(-1, 1)
             videoCtx.translate(-w, 0)
-            videoCtx.drawImage(video, 0, 0, w, h)
+            videoCtx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h)
             videoCtx.restore()
 
             // Run hand detection
@@ -114,10 +130,10 @@ export default function Camera() {
                 // Mirror landmark x positions to match flipped video
                 const mirrored = landmarks.map(lm => ({ ...lm, x: 1 - lm.x }))
 
-                const ix = mirrored[8].x * w
-                const iy = mirrored[8].y * h
-                const ex = ((mirrored[0].x + mirrored[9].x) / 2) * w
-                const ey = ((mirrored[0].y + mirrored[9].y) / 2) * h
+                const ix = ((mirrored[8].x * video.videoWidth - sx) / sw) * w
+                const iy = ((mirrored[8].y * video.videoHeight - sy) / sh) * h
+                const ex = (((mirrored[0].x + mirrored[9].x) / 2 * video.videoWidth - sx) / sw) * w
+                const ey = (((mirrored[0].y + mirrored[9].y) / 2 * video.videoHeight - sy) / sh) * h
 
                 const oneFingerUp = detectOneFinger(mirrored, w, h)
                 const fiveFingers = detectFiveFingers(mirrored, w, h)
@@ -210,7 +226,7 @@ export default function Camera() {
                 autoPlay
                 muted
                 playsInline
-                style={{ display: 'none' }}
+                style={{ display: 'none'}}
             />
             <canvas ref={videoCanvasRef} style={{ display: 'block' }} />
             <canvas ref={drawCanvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
