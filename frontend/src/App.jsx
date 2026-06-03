@@ -21,6 +21,8 @@ function App() {
   const [ isHost, setIsHost ] = useState(false)
   const [ code, setCode ] = useState('')
 
+  const [players, setPlayers] = useState([])
+
 
 
   // Checks for socket connection
@@ -48,8 +50,8 @@ function App() {
 
   return (
     <div>
-      {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} onStartLobby={setStartLobby} onJoinLobby={setJoinLobby} onIsHost={setIsHost} onSetCode={setCode} onSetUsername={setUsername}/>}
-      {screen === 'lobby' && <Lobby isHost={isHost} username={username} code={code}/>}
+      {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} onStartLobby={setStartLobby} onJoinLobby={setJoinLobby} onIsHost={setIsHost} onSetCode={setCode} onSetUsername={setUsername} onSetPlayers={setPlayers}/>}
+      {screen === 'lobby' && <Lobby isHost={isHost} username={username} code={code} players={players} onSetPlayers={setPlayers}/>}
     </div>
   )
 }
