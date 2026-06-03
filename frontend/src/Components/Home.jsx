@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import socket from '../socket'
 
 
-function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode, onSetUsername}) {
+function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode, onSetUsername, onSetPlayers}) {
     const [ username, setUsername ] = useState('')
     const [ code, setCode ] = useState('')
      
@@ -11,9 +11,9 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
     // Check for created Lobby data
     useEffect(() => {
         socket.on('lobby_created', (data) => {
-            console.log('lobby created, code:', data.code)
             onSetCode(data.code)
             onSetUsername(username)
+            onSetPlayers(data.players)
             onStartLobby(true)
         })
 
@@ -25,6 +25,7 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
         socket.on('player_joined', (data) => {
             onSetCode(data.code)
             onSetUsername(username)
+            onSetPlayers(data.players)
             onJoinLobby(true)
         })
 

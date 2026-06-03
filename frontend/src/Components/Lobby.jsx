@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import Camera from './Camera'
+import PlaceholderCam from './PlaceholderCam';
 
 import socket from '../socket'
 
 
-function useWindowWidth() {
+function useWindowDimensions() {
     const [size, setSize] = useState({
         width: window.innerWidth,
+        height: window.innerHeight
     })
 
     useEffect(() => {
         const handleResize = () => setSize({
-        width: window.innerWidth,
+            width: window.innerWidth,
+            height: window.innerHeight
         })
 
         window.addEventListener('resize', handleResize)
@@ -24,17 +27,11 @@ function useWindowWidth() {
 
 
 
-function Lobby({ isHost, username, code }) {
-    // Player state array
-    const [ players, setPlayers ] = useState([])
-
-
+function Lobby({ isHost, username, code, players, setPlayers }) {
     // Check for lobby Code
     useEffect(() => {
         socket.on('player_joined', (data) => {
-            console.log('players:', data.players)
-            setPlayers(data.players)
-
+            onSetPlayers(data.players)
         })
 
         socket.on('error', (data) => {
@@ -45,24 +42,41 @@ function Lobby({ isHost, username, code }) {
             socket.off('player_joined')
             socket.off('error')
         }
-    }, [])
+    }, [players])
 
 
 
     // Dimensions of the screen
-    const { width } = useWindowWidth()
-    const mWidth = `${width * 0.6}px`
+    const { width, height } = useWindowDimensions()
+
+    const camWidth = width * 0.5
+    const camHeight = camWidth * (9/16)
+
+    const miniCamHeight = height / 8
+    const miniCamWidth = miniCamHeight * (16/9)
+
 
 
     return (
-        <div className='flex items-center justify-center color4 p-1 rounded-lg mt-5'>
-            <div className='flex justify-center items-center color3 p-2 rounded-lg'>
-                <div className='flex flex-col justify-center items-center color2 p-4 rounded-lg'>
-                    {isHost && 
-                        <p>{code}</p> 
-                    }
-                    <p>{username}</p>
-                    <Camera/>
+        <div className='flex flex-col h-screen justify-center items-center'>
+            <p>{code}</p>
+            <div className='relative flex items-center'>
+                <div className='absolute right-full flex flex-col'>
+                    {players.map(p => (
+                        <div key={p} className='leading-none'>
+                            {p === username ? <Camera camWidth={miniCamWidth} camHeight={miniCamHeight} /> : <PlaceholderCam name={p} camWidth={miniCamWidth} camHeight={miniCamHeight}/>}
+                        </div>
+                    ))}
+                </div>
+
+               <div>
+                    <Camera camWidth={camWidth} camHeight={camHeight} />
+                </div>
+
+                <div className='absolute left-full flex flex-col'>
+                    {players.map(p => (
+                        <div key={p}>{p}</div>
+                    ))}
                 </div>
             </div>
         </div>
