@@ -46,7 +46,11 @@ def handleCreateLobby(data):
     }
 
     join_room(code)
-    emit('lobby_created', {'code': code}, room=code)
+    emit('lobby_created', {
+        'code': code,
+        'players': lobbies[code]['players']
+    }, room=code)
+
 
 
 
