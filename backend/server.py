@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import string
@@ -40,8 +40,8 @@ def handleCreateLobby(data):
     code = generateCode()
 
     lobbies[code] = {
-        'host': username,
-        'players': [username],
+        'host': request.sid,
+        'players': [{ 'id': request.sid, 'username': username }],
         'started': False
     }
 
@@ -63,12 +63,40 @@ def handleJoinLobby(data):
         emit('error', {'message': 'Lobby not Found'})
         return
 
-    lobbies[code]['players'].append(username)
+    lobbies[code]['players'].append({'id': request.sid, 'username': username})
     join_room(code)
 
     emit('player_joined', {
         'players': lobbies[code]['players']
     }, room=code)
+
+
+
+@socketio.on('leave_room')
+def handleLeaveLobby(data):
+    code = data['roomCode']
+
+    lobbies[code]['players'] = [p for p in lobbies[code]['players'] if p['id'] != request.sid]
+
+    leave_room(code)
+
+    emit('player_left', {
+        'players': lobbies[code]['players']
+    }, room=code)
+
+
+@socketio.on('disconnect')
+def handleDisconnect():
+    for code in list(lobbies.keys()):
+        players = lobbies[code]['players']
+        if any(p['id'] == request.sid for p in players):
+            lobbies[code]['players'] = [p for p in lobbies[code]['players'] if p['id'] != request.sid]
+
+            emit('player_left', {
+                'players': lobbies[code]['players']
+            }, room=code)
+
+            break
 
 
 
