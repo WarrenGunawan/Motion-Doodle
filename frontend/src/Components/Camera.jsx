@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
 import { detectOneFinger, detectFiveFingers, detectWebslinger } from '../detect'
 
-export default function Camera({ camWidth, camHeight, canDraw }) {
+export default function Camera({ camWidth, camHeight, canDraw, stream }) {
     const videoRef = useRef(null)
     const videoCanvasRef = useRef(null)
     const drawCanvasRef = useRef(null)
@@ -41,33 +41,18 @@ export default function Camera({ camWidth, camHeight, canDraw }) {
 
     // Start camera
     useEffect(() => {
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-                if (videoRef.current) {
-                    videoRef.current.muted = true
-                    videoRef.current.srcObject = stream
-                    videoRef.current.oncanplay = () => {
-                        videoCanvasRef.current.width = camWidth
-                        videoCanvasRef.current.height = camHeight
-                        drawCanvasRef.current.width = camWidth
-                        drawCanvasRef.current.height = camHeight
-                        videoRef.current.play()
-                    }
-                }
-            } catch (err) {
-                console.error('Camera error:', err)
+        if (!stream) return
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream
+            videoRef.current.oncanplay = () => {
+                videoCanvasRef.current.width = camWidth
+                videoCanvasRef.current.height = camHeight
+                drawCanvasRef.current.width = camWidth
+                drawCanvasRef.current.height = camHeight
+                videoRef.current.play()
             }
         }
-        startCamera()
-
-        return () => {
-            if (videoRef.current?.srcObject) {
-                videoRef.current.srcObject.getTracks().forEach(track => track.stop())
-                videoRef.current.srcObject = null
-            }
-        }
-    }, [])
+    }, [stream])
 
     // Detection loop
     useEffect(() => {
