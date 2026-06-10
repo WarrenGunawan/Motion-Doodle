@@ -26,10 +26,6 @@ def generateCode():
 def handleConnect():
     print('Successfully connected!')
 
-@socketio.on('disconnect')
-def handleDisconnect():
-    print('Successfully disconnected!')
-
 
 
 
@@ -99,6 +95,20 @@ def handleDisconnect():
             break
 
 
+
+# WebRTC events
+
+@socketio.on('offer')
+def handleOffer(data):
+    socketio.emit('offer', data, to=data['to'])
+
+@socketio.on('answer')
+def handleAnswer(data):
+    socketio.emit('answer', data, to=data['to'])
+
+@socketio.on('iceCandidate')
+def handleIceCandidate(data):
+    socketio.emit('iceCandidate', data, to=data['to'])
 
 
 
