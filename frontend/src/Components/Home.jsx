@@ -20,9 +20,9 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
             onJoinLobby(true)
         }
 
-        socket.on('lobby_created', handleLobbyCreated)
+        socket.on('lobbyCreated', handleLobbyCreated)
 
-        return () => socket.off('lobby_created', handleLobbyCreated)
+        return () => socket.off('lobbyCreated', handleLobbyCreated)
     }, [])
 
     // Check if the code is valid
@@ -38,11 +38,11 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
             console.log('error:', data.message)
         }
 
-        socket.on('player_joined', handlePlayerJoined)
+        socket.on('playerJoined', handlePlayerJoined)
         socket.on('error', handleError)
 
         return () => {
-            socket.off('player_joined', handlePlayerJoined)
+            socket.off('playerJoined', handlePlayerJoined)
             socket.off('error', handleError)
         }
     }, [])
@@ -81,12 +81,12 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
 
     // Create a Lobby with Socket
     function createdLobby(username) {
-        socket.emit('create_lobby', {username})
+        socket.emit('createLobby', {username})
     }
 
     // Join lobby with socket
     function joinedLobby(username, roomCode) {
-        socket.emit('join_lobby', {username, roomCode})
+        socket.emit('joinLobby', {username, roomCode})
     }
     
 

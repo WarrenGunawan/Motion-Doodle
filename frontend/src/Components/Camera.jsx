@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
 import { detectOneFinger, detectFiveFingers, detectWebslinger } from '../detect'
 
-export default function Camera({ camWidth, camHeight, canDraw, stream }) {
+export default function Camera({ camWidth, camHeight, canDraw, stream, onCompositeCanvas, shouldClear }) {
     const videoRef = useRef(null)
     const videoCanvasRef = useRef(null)
     const drawCanvasRef = useRef(null)
@@ -14,6 +14,8 @@ export default function Camera({ camWidth, camHeight, canDraw, stream }) {
         eraseStart: null,
         clearStart: null
     })
+    const compositeCanvasRef = useRef(null)
+    const compositeCalledRef = useRef(false)
 
     const DELAY = 0.7
     const brushColor = '#000000'
@@ -53,6 +55,14 @@ export default function Camera({ camWidth, camHeight, canDraw, stream }) {
             }
         }
     }, [stream])
+
+    // Clear canvas when turn ends
+    useEffect(() => {
+        if (shouldClear && drawCanvasRef.current) {
+            const ctx = drawCanvasRef.current.getContext('2d')
+            ctx.clearRect(0, 0, drawCanvasRef.current.width, drawCanvasRef.current.height)
+        }
+    }, [shouldClear])
 
     // Detection loop
     useEffect(() => {
@@ -202,6 +212,20 @@ export default function Camera({ camWidth, camHeight, canDraw, stream }) {
                 }
             }
 
+            const compositeCanvas = compositeCanvasRef.current
+            if (compositeCanvas) {
+                compositeCanvas.width = w
+                compositeCanvas.height = h
+                const compositeCtx = compositeCanvas.getContext('2d')
+                compositeCtx.drawImage(videoCanvas, 0, 0)
+                compositeCtx.drawImage(drawCanvas, 0, 0)
+            }
+
+            if (!compositeCalledRef.current && onCompositeCanvas) {
+                onCompositeCanvas(compositeCanvasRef.current)
+                compositeCalledRef.current = true
+            }
+
             animationId = requestAnimationFrame(detect)
         }
 
@@ -220,6 +244,7 @@ export default function Camera({ camWidth, camHeight, canDraw, stream }) {
             />
             <canvas ref={videoCanvasRef} style={{ display: 'block' }} />
             <canvas ref={drawCanvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
+            <canvas ref={compositeCanvasRef} style={{ display: 'none' }} />
         </div>
     )
 }

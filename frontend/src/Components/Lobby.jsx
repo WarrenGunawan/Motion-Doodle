@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+
 import Camera from './Camera'
 import PlaceholderCam from './PlaceholderCam';
 import RemoteCam from './RemoteCam';
+import LocalCam from './LocalCam';
+import GameScreen from './GameScreen';
+
 
 import socket from '../socket'
 
@@ -34,6 +38,12 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     const peerConnectionsRef = useRef({})
     const [ localStream, setLocalStream ] = useState(null)
     const [ remoteStreams, setRemoteStreams ] = useState({})
+
+    // Start Game Logic
+    const [ gameStarted, setGameStarted ] = useState(false)
+    const [ drawer, setDrawer ] = useState(null)
+    const [ shouldClearCanvas, setShouldClearCanvas ] = useState(false)
+    const [ timeLeft, setTimeLeft ] = useState(null)
 
 
 
@@ -80,13 +90,29 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             console.log('error:', data.message)
         }
 
-        socket.on('player_left', handlePlayerLeft)
-        socket.on('player_joined', handlePlayerJoined)
+        function handleGameStart(data) {
+            setGameStarted(true)
+            setDrawer(data.drawer)
+        }
+
+        function handleNextTurn(data) {
+            setDrawer(data.drawer)
+            setShouldClearCanvas(true)
+            setTimeout(() => setShouldClearCanvas(false), 100)
+        }
+
+
+        socket.on('gameStarted', handleGameStart)
+        socket.on('playerLeft', handlePlayerLeft)
+        socket.on('playerJoined', handlePlayerJoined)
+        socket.on('nextTurn', handleNextTurn)
         socket.on('error', handleError)
 
         return () => {
-            socket.off('player_joined', handlePlayerJoined)
-            socket.off('player_left', handlePlayerLeft)
+            socket.off('gameStarted', handleGameStart)
+            socket.off('playerJoined', handlePlayerJoined)
+            socket.off('playerLeft', handlePlayerLeft)
+            socket.off('nextTurn', handleNextTurn)
             socket.off('error', handleError)
         }
     }, [])
@@ -95,7 +121,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     // Leave the Lobby
     useEffect(() => {
         return () => {
-            socket.emit('leave_room', {roomCode: code})
+            socket.emit('leaveRoom', {roomCode: code})
         }
     }, [])
 
@@ -111,7 +137,6 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
     const miniCamHeight = height / 8
     const miniCamWidth = miniCamHeight * (16/9)
-
 
 
 
@@ -229,26 +254,61 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
 
+    // Get Canvas and video feed
+    const compositeStreamRef = useRef(null)
+
+    function onCompositeCanvas(canvas) {
+        const stream = canvas.captureStream(30)
+        compositeStreamRef.current = stream
+        Object.values(peerConnectionsRef.current).forEach(pc => {
+            const sender = pc.getSenders().find(s => s.track?.kind === 'video')
+            if (sender) {
+                sender.replaceTrack(stream.getVideoTracks()[0])
+            }
+        })
+    }
+
+
+
     return (
         <div className='flex flex-col h-screen justify-center items-center'>
-            <p className='absolute top-10'>{code}</p>
+            <p className='absolute top-10'>{timeLeft} | {code}</p>
+
             <div className='relative flex items-center'>
                 <div className='absolute right-full flex flex-col mr-0.5'>
                     {players.map(p => (
                         <div key={p.id} className='leading-none'>
                             {p.id === socket.id 
-                                ? <Camera camWidth={miniCamWidth} camHeight={miniCamHeight} canDraw={false} stream={localStream}/> 
+                                ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/> 
                                 : remoteStreams[p.id]
                                     ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
                                     : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                            }
+                            } 
                         </div>
                     ))}
                 </div>
 
+
+
+
+
                <div>
-                    <Camera camWidth={camWidth} camHeight={camHeight} canDraw={true} stream={localStream}/>
+                    <GameScreen camWidth={camWidth} 
+                        camHeight={camHeight} 
+                        localStream={localStream} 
+                        isHost={isHost} 
+                        gameStarted={gameStarted} 
+                        code={code} 
+                        drawer={drawer || players[0]} 
+                        remoteStreams={remoteStreams} 
+                        onCompositeCanvas={onCompositeCanvas} 
+                        setTimeLeft={setTimeLeft} 
+                        shouldClear={shouldClearCanvas} />
                 </div>
+
+
+
+
 
                 <div className='absolute left-full flex flex-col'>
                     {players.map(p => (
