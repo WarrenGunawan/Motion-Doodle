@@ -30,7 +30,7 @@ def handleConnect():
 
 
 
-@socketio.on('create_lobby')
+@socketio.on('createLobby')
 def handleCreateLobby(data):
     username = data['username']
     code = generateCode()
@@ -42,7 +42,7 @@ def handleCreateLobby(data):
     }
 
     join_room(code)
-    emit('lobby_created', {
+    emit('lobbyCreated', {
         'code': code,
         'players': lobbies[code]['players']
     }, room=code)
@@ -50,7 +50,7 @@ def handleCreateLobby(data):
 
 
 
-@socketio.on('join_lobby')
+@socketio.on('joinLobby')
 def handleJoinLobby(data):
     username = data['username']
     code = data['roomCode']
@@ -62,13 +62,13 @@ def handleJoinLobby(data):
     lobbies[code]['players'].append({'id': request.sid, 'username': username})
     join_room(code)
 
-    emit('player_joined', {
+    emit('playerJoined', {
         'players': lobbies[code]['players']
     }, room=code)
 
 
 
-@socketio.on('leave_room')
+@socketio.on('leaveRoom')
 def handleLeaveLobby(data):
     code = data['roomCode']
 
@@ -76,7 +76,7 @@ def handleLeaveLobby(data):
 
     leave_room(code)
 
-    emit('player_left', {
+    emit('playerLeft', {
         'players': lobbies[code]['players']
     }, room=code)
 
@@ -88,11 +88,35 @@ def handleDisconnect():
         if any(p['id'] == request.sid for p in players):
             lobbies[code]['players'] = [p for p in lobbies[code]['players'] if p['id'] != request.sid]
 
-            emit('player_left', {
+            emit('playerLeft', {
                 'players': lobbies[code]['players']
             }, room=code)
 
             break
+
+
+# Game Logic
+@socketio.on('startGame')
+def handleStartGame(data):
+    code = data['roomCode']
+    lobbies[code]['started'] = True
+    lobbies[code]['drawerIndex'] = 0
+    
+    emit('gameStarted', {
+        'drawer': lobbies[code]['players'][0]
+    }, room=code)
+
+@socketio.on('turnEnded')
+def handleTurnEnded(data):
+    code = data['roomCode']
+    players = lobbies[code]['players']
+    current = lobbies[code]['drawerIndex']
+    next_index = (current + 1) % len(players)
+    lobbies[code]['drawerIndex'] = next_index
+
+    emit('nextTurn', {
+        'drawer': players[next_index]
+    }, room=code)
 
 
 
