@@ -6,7 +6,6 @@ import RemoteCam from './RemoteCam';
 import LocalCam from './LocalCam';
 import GameScreen from './GameScreen';
 
-
 import socket from '../socket'
 
 
@@ -33,6 +32,10 @@ function useWindowDimensions() {
 
 
 function Lobby({ isHost, username, code, players, onSetPlayers }) {
+    // Random Word Selection
+    const [ currentWord, setCurrentWord ] = useState('')
+
+
     // WebRTC assets
     const localStreamRef = useRef(null)
     const peerConnectionsRef = useRef({})
@@ -44,6 +47,19 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     const [ drawer, setDrawer ] = useState(null)
     const [ shouldClearCanvas, setShouldClearCanvas ] = useState(false)
     const [ timeLeft, setTimeLeft ] = useState(null)
+    const [ guessInput, setGuessInput] = useState('')
+    const [ hasGuessedCorrectly, setHasGuessedCorrectly ] = useState(false)
+
+   function handleGuess(guess) {
+    console.log('guess:', guess, 'currentWord:', currentWord)
+    if (guess.trim().toLowerCase() !== currentWord.toLowerCase()) {
+        setGuessInput('')
+    } else {
+        console.log('correct! emitting correctGuess')
+        setHasGuessedCorrectly(true)
+        socket.emit('correctGuess', { roomCode: code })
+    }
+}
 
 
 
@@ -91,21 +107,33 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
         }
 
         function handleGameStart(data) {
+            setCurrentWord(data.word)
+            setGuessInput('')
+            setHasGuessedCorrectly(false)
             setGameStarted(true)
             setDrawer(data.drawer)
         }
 
         function handleNextTurn(data) {
             setDrawer(data.drawer)
+            setCurrentWord(data.word)
+            setGuessInput('')
+            setHasGuessedCorrectly(false)
             setShouldClearCanvas(true)
             setTimeout(() => setShouldClearCanvas(false), 100)
         }
+
+        function handleTimeUpdate(data) {
+            setTimeLeft(data.timeLeft)
+        }
+
 
 
         socket.on('gameStarted', handleGameStart)
         socket.on('playerLeft', handlePlayerLeft)
         socket.on('playerJoined', handlePlayerJoined)
         socket.on('nextTurn', handleNextTurn)
+        socket.on('timeUpdate', handleTimeUpdate)
         socket.on('error', handleError)
 
         return () => {
@@ -113,6 +141,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             socket.off('playerJoined', handlePlayerJoined)
             socket.off('playerLeft', handlePlayerLeft)
             socket.off('nextTurn', handleNextTurn)
+            socket.off('timeUpdate', handleTimeUpdate)
             socket.off('error', handleError)
         }
     }, [])
@@ -272,7 +301,9 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
     return (
         <div className='flex flex-col h-screen justify-center items-center'>
-            <p className='absolute top-10'>{timeLeft} | {code}</p>
+            <div>
+                <p className='absolute top-10'>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <p>| {currentWord}</p>}</p>
+            </div>
 
             <div className='relative flex items-center'>
                 <div className='absolute right-full flex flex-col mr-0.5'>
@@ -315,6 +346,24 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                         <div key={p.id} className='whitespace-nowrap'>{p.username}</div>
                     ))}
                 </div>
+            </div>
+
+
+
+
+            <div>
+                {(drawer || players[0])?.id !== socket.id &&
+                    <input value={guessInput} 
+                        disabled={hasGuessedCorrectly}
+                        onChange={(e) => setGuessInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if(e.key == 'Enter') {
+                                handleGuess(guessInput)
+                            }
+                        }}
+                        className='w-30 h-8 bg-black text-white'
+                    />
+                }
             </div>
         </div>
     )
