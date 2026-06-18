@@ -27,9 +27,18 @@ with open('words.json') as f:
 WORDS = wordsData['default']
 
 
-
+# Helper Functions
 def generateCode():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def addScore(code, player_id, points):
+    for p in lobbies[code]['players']:
+        if p['id'] == player_id:
+            p['score'] += points
+            break
+
+
+
 
 @socketio.on('connect')
 def handleConnect():
@@ -46,7 +55,7 @@ def handleCreateLobby(data):
 
     lobbies[code] = {
         'host': request.sid,
-        'players': [{ 'id': request.sid, 'username': username }],
+        'players': [{ 'id': request.sid, 'username': username, 'score': 0 }],
         'started': False
     }
 
@@ -68,7 +77,7 @@ def handleJoinLobby(data):
         emit('error', {'message': 'Lobby not Found'})
         return
 
-    lobbies[code]['players'].append({'id': request.sid, 'username': username})
+    lobbies[code]['players'].append({'id': request.sid, 'username': username, 'score': 0})
     join_room(code)
 
     emit('playerJoined', {
@@ -142,15 +151,24 @@ def advanceTurn(code):
 
     players = lobbies[code]['players']
     current = lobbies[code]['drawerIndex']
+
+    drawer_id = players[current]['id']
+    correct_count = len(lobbies[code].get('correctGuessers', set()))
+    bonus = correct_count * 50
+    if bonus > 0:
+        addScore(code, drawer_id, bonus)
+
     next_index = (current + 1) % len(players)
     lobbies[code]['drawerIndex'] = next_index
     word = random.choice(WORDS)
     lobbies[code]['currentWord'] = word
     lobbies[code]['correctGuessers'] = set()
+    lobbies[code]['firstGuessTime'] = None
 
     socketio.emit('nextTurn', {
         'drawer': players[next_index],
-        'word': word
+        'word': word,
+        'players': players
     }, room=code)
 
     startTurnTimer(code)
@@ -184,7 +202,16 @@ def handleCorrectGuess(data):
     player_id = request.sid
     print('correctGuess from:', player_id, 'in lobby:', code)
 
+    is_first = len(lobbies[code]['correctGuessers']) == 0
     lobbies[code]['correctGuessers'].add(player_id)
+    if is_first:
+        points = 500
+        lobbies[code]['firstGuessTime'] = lobbies[code]['timeLeft']
+    else:
+        first_guess_time = lobbies[code].get('firstGuessTime', 60)
+        points = round(((lobbies[code]['timeLeft'] / first_guess_time) * 350) + 50)
+
+    addScore(code, player_id, points)
 
     non_drawer_count = len(lobbies[code]['players']) - 1
     print('guessers so far:', lobbies[code]['correctGuessers'], 'needed:', non_drawer_count)
