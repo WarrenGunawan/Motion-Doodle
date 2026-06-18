@@ -13,7 +13,8 @@ socketio = SocketIO(
     app,
     cors_allowed_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "http://192.168.68.59:5173"
     ],
     async_mode="threading"
 )
@@ -218,7 +219,7 @@ def handleIceCandidate(data):
 if __name__ == '__main__':
     socketio.run(
         app,
-        host="127.0.0.1",
+        host="0.0.0.0",
         debug=True,
         port=5001,
         allow_unsafe_werkzeug=True
