@@ -39,6 +39,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     // WebRTC assets
     const localStreamRef = useRef(null)
     const peerConnectionsRef = useRef({})
+    const drawerRef = useRef(null)
     const [ localStream, setLocalStream ] = useState(null)
     const [ remoteStreams, setRemoteStreams ] = useState({})
 
@@ -89,10 +90,21 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
             const offer = await pc.createOffer()
             await pc.setLocalDescription(offer)
+
+            await new Promise(resolve => {
+                if (pc.iceGatheringState === 'complete') {
+                    resolve()
+                } else {
+                    pc.onicegatheringstatechange = () => {
+                        if (pc.iceGatheringState === 'complete') resolve()
+                    }
+                }
+            })
+
             socket.emit('offer', {
                 to: newPlayer.id,
                 from: socket.id,
-                offer
+                offer: pc.localDescription
             })
 
             console.log('player joined, sending offer to:', newPlayer.id)
@@ -100,6 +112,19 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
         function handlePlayerLeft(data) {
             onSetPlayers(data.players)
+
+            setRemoteStreams(prev => {
+                const updated = { ...prev }
+                const remainingIds = new Set(data.players.map(p => p.id))
+
+                Object.keys(updated).forEach(id => {
+                    if (!remainingIds.has(id)) {
+                        delete updated[id]
+                    }
+                })
+
+                return updated
+            })
         }
 
         function handleError(data) {
@@ -112,15 +137,28 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setHasGuessedCorrectly(false)
             setGameStarted(true)
             setDrawer(data.drawer)
+            drawerRef.current = data.drawer
         }
 
         function handleNextTurn(data) {
+            const oldDrawer = drawerRef.current
+            drawerRef.current = data.drawer
+            
             setDrawer(data.drawer)
             setCurrentWord(data.word)
             setGuessInput('')
             setHasGuessedCorrectly(false)
             setShouldClearCanvas(true)
             setTimeout(() => setShouldClearCanvas(false), 100)
+
+            if (oldDrawer?.id === socket.id && localStreamRef.current) {
+                Object.values(peerConnectionsRef.current).forEach(pc => {
+                    const sender = pc.getSenders().find(s => s.track?.kind === 'video')
+                    if (sender) {
+                        sender.replaceTrack(localStreamRef.current.getVideoTracks()[0])
+                    }
+                })
+            }
         }
 
         function handleTimeUpdate(data) {
@@ -194,8 +232,20 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
     const createPeerConnection = useRef((playerId) => {
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ],
+            iceCandidatePoolSize: 10
         })
+
+        pc.onconnectionstatechange = () => {
+            console.log('connection state:', pc.connectionState)
+        }
+
+        pc.oniceconnectionstatechange = () => {
+            console.log('ICE connection state:', pc.iceConnectionState)
+        }
 
         pc.ontrack = (event) => {
             console.log('safari got track from:', playerId)
@@ -241,13 +291,26 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             })
 
             await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
+
+
             const answer = await pc.createAnswer()
             await pc.setLocalDescription(answer)
-            socket.emit('answer', {
-                to: data.from,
-                from: socket.id,
-                answer
+
+            await new Promise(resolve => {
+                if (pc.iceGatheringState === 'complete') {
+                    resolve()
+                } else {
+                    pc.onicegatheringstatechange = () => {
+                        if (pc.iceGatheringState === 'complete') resolve()
+                    }
+                }
             })
+
+socket.emit('answer', {
+    to: data.from,
+    from: socket.id,
+    answer: pc.localDescription
+})
 
             console.log('received offer, creating answer for:', data.from)
         }
@@ -302,7 +365,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     return (
         <div className='flex flex-col h-screen justify-center items-center'>
             <div>
-                <p className='absolute top-10'>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <p>| {currentWord}</p>}</p>
+                <p className='absolute top-10'>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <span>| {currentWord}</span>}</p>
             </div>
 
             <div className='relative flex items-center'>

@@ -11,6 +11,15 @@ function RemoteCam({ stream, camWidth, camHeight }) {
     }, [stream])
 
     useEffect(() => {
+        if (canvasRef.current) {
+            canvasRef.current.width = camWidth
+            canvasRef.current.height = camHeight
+        }
+    }, [camWidth, camHeight])
+
+
+
+    useEffect(() => {
         let animationId
 
         function draw() {
@@ -21,9 +30,6 @@ function RemoteCam({ stream, camWidth, camHeight }) {
                 animationId = requestAnimationFrame(draw)
                 return
             }
-
-            canvas.width = camWidth
-            canvas.height = camHeight
 
             const ctx = canvas.getContext('2d')
             const videoAspect = video.videoWidth / video.videoHeight
