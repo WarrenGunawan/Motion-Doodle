@@ -150,6 +150,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setHasGuessedCorrectly(false)
             setShouldClearCanvas(true)
             setTimeout(() => setShouldClearCanvas(false), 100)
+            onSetPlayers(data.players)
 
             if (oldDrawer?.id === socket.id && localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -406,7 +407,7 @@ socket.emit('answer', {
 
                 <div className='absolute left-full flex flex-col'>
                     {players.map(p => (
-                        <div key={p.id} className='whitespace-nowrap'>{p.username}</div>
+                        <div key={p.id} className='whitespace-nowrap'>{p.username} | {p.score}</div>
                     ))}
                 </div>
             </div>
