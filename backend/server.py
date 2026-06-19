@@ -151,24 +151,27 @@ def advanceTurn(code):
 
     players = lobbies[code]['players']
     current = lobbies[code]['drawerIndex']
-
-    drawer_id = players[current]['id']
-    correct_count = len(lobbies[code].get('correctGuessers', set()))
-    bonus = correct_count * 50
-    if bonus > 0:
-        addScore(code, drawer_id, bonus)
-
     next_index = (current + 1) % len(players)
+
+    if next_index == 0:
+        lobbies[code]['currentRound'] = lobbies[code].get('currentRound', 1) + 1
+
+        if lobbies[code]['currentRound'] > lobbies[code]['numRounds']:
+            socketio.emit('gameOver', {
+                'players': players
+            }, room=code)
+            return
+
     lobbies[code]['drawerIndex'] = next_index
     word = random.choice(WORDS)
     lobbies[code]['currentWord'] = word
     lobbies[code]['correctGuessers'] = set()
-    lobbies[code]['firstGuessTime'] = None
 
     socketio.emit('nextTurn', {
         'drawer': players[next_index],
         'word': word,
-        'players': players
+        'players': players,
+        'currentRound': lobbies[code]['currentRound']
     }, room=code)
 
     startTurnTimer(code)
@@ -179,6 +182,8 @@ def handleStartGame(data):
     code = data['roomCode']
     lobbies[code]['started'] = True
     lobbies[code]['drawerIndex'] = 0
+    lobbies[code]['currentRound'] = 1
+    lobbies[code]['numRounds'] = data.get('numRounds', 3)
     word = random.choice(WORDS)
     lobbies[code]['currentWord'] = word
     lobbies[code]['correctGuessers'] = set()
@@ -196,31 +201,42 @@ def handleCorrectGuess(data):
     code = data.get('roomCode')
 
     if code not in lobbies:
-        print('Invalid room code for correctGuess:', code)
         return
+    
+    next_index = (lobbies[code]['drawerIndex'] + 1) % len(lobbies[code]['players'])
+    next_drawer = lobbies[code]['players'][next_index]
+
+    socketio.emit('roundEnding', {
+        'nextDrawer':  next_drawer
+    }, room=code)
 
     player_id = request.sid
-    print('correctGuess from:', player_id, 'in lobby:', code)
 
     is_first = len(lobbies[code]['correctGuessers']) == 0
     lobbies[code]['correctGuessers'].add(player_id)
-    if is_first:
-        points = 500
-        lobbies[code]['firstGuessTime'] = lobbies[code]['timeLeft']
-    else:
-        first_guess_time = lobbies[code].get('firstGuessTime', 60)
-        points = round(((lobbies[code]['timeLeft'] / first_guess_time) * 350) + 50)
+    
+    points = round(((lobbies[code]['timeLeft'] / 60) * 450) + 50)
 
     addScore(code, player_id, points)
 
+    socketio.emit('scoresUpdated', {
+        'players': lobbies[code]['players']
+    }, room=code)
+
     non_drawer_count = len(lobbies[code]['players']) - 1
-    print('guessers so far:', lobbies[code]['correctGuessers'], 'needed:', non_drawer_count)
 
     if len(lobbies[code]['correctGuessers']) >= non_drawer_count:
-        print('threshold met, scheduling advanceTurn in 3s')
+        players = lobbies[code]['players']
+        current = lobbies[code]['drawerIndex']
+        drawer_id = players[current]['id']
+        bonus = len(lobbies[code]['correctGuessers']) * 50
+        addScore(code, drawer_id, bonus)
+
+        socketio.emit('scoresUpdated', {
+            'players': lobbies[code]['players']
+        }, room=code)
 
         def delayed_advance():
-            print('delayed_advance firing now')
             advanceTurn(code)
 
         threading.Timer(3.0, delayed_advance).start()
