@@ -57,7 +57,7 @@ function RemoteCam({ stream, camWidth, camHeight }) {
     }, [camWidth, camHeight])
 
     return (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div style={{ position: 'relative', display: 'block' }}>
             <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }} />
             <canvas ref={canvasRef} style={{ display: 'block' }} />
         </div>
