@@ -43,18 +43,21 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
 
     // Start camera
     useEffect(() => {
-        if (!stream) return
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream
-            videoRef.current.oncanplay = () => {
-                videoCanvasRef.current.width = camWidth
-                videoCanvasRef.current.height = camHeight
-                drawCanvasRef.current.width = camWidth
-                drawCanvasRef.current.height = camHeight
-                videoRef.current.play()
-            }
-        }
-    }, [stream])
+        if (!stream || !videoRef.current) return
+
+        const video = videoRef.current
+        video.srcObject = stream
+
+        const cw = Math.round(camWidth)
+        const ch = Math.round(camHeight)
+
+        videoCanvasRef.current.width = cw
+        videoCanvasRef.current.height = ch
+        drawCanvasRef.current.width = cw
+        drawCanvasRef.current.height = ch
+
+        video.play()
+    }, [stream, camWidth, camHeight])
 
     // Clear canvas when turn ends
     useEffect(() => {
@@ -109,6 +112,8 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
                 sx = 0
                 sy = (video.videoHeight - sh) / 2
             }
+
+            videoCtx.clearRect(0, 0, w, h)
 
             videoCtx.save()
             videoCtx.scale(-1, 1)
@@ -227,6 +232,7 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
             }
 
             animationId = requestAnimationFrame(detect)
+            console.log('video native:', video.videoWidth, video.videoHeight, 'canvas:', w, h, 'crop:', sx, sy, sw, sh)
         }
 
         animationId = requestAnimationFrame(detect)
@@ -234,16 +240,48 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
     }, [])
 
     return (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div
+            style={{
+                position: 'relative',
+                width: `${camWidth}px`,
+                height: `${camHeight}px`,
+                overflow: 'hidden',
+                backgroundColor: 'purple',
+                lineHeight: 0,
+                fontSize: 0,
+            }}
+        >
             <video
                 ref={videoRef}
                 autoPlay
                 muted
                 playsInline
-                style={{ display: 'none'}}
+                style={{ display: 'none' }}
             />
-            <canvas ref={videoCanvasRef} style={{ display: 'block' }} />
-            <canvas ref={drawCanvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
+
+            <canvas
+                ref={videoCanvasRef}
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'block',
+                }}
+            />
+
+            <canvas
+                ref={drawCanvasRef}
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'block',
+                    pointerEvents: 'none',
+                }}
+            />
+
             <canvas ref={compositeCanvasRef} style={{ display: 'none' }} />
         </div>
     )
