@@ -43,13 +43,18 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     const [ localStream, setLocalStream ] = useState(null)
     const [ remoteStreams, setRemoteStreams ] = useState({})
 
-    // Start Game Logic
+    // Game Logic
     const [ gameStarted, setGameStarted ] = useState(false)
+    const [ currentRound, setCurrentRound ] = useState(1)
     const [ drawer, setDrawer ] = useState(null)
     const [ shouldClearCanvas, setShouldClearCanvas ] = useState(false)
     const [ timeLeft, setTimeLeft ] = useState(null)
     const [ guessInput, setGuessInput] = useState('')
     const [ hasGuessedCorrectly, setHasGuessedCorrectly ] = useState(false)
+    const [ transitioning, setTransitioning ] = useState(false)
+    const [ nextDrawerName, setNextDrawerName ] = useState('')
+    const [ gameOver, setGameOver ] = useState(false)
+    const [ finalScores, setFinalScores ] = useState([])
 
    function handleGuess(guess) {
     console.log('guess:', guess, 'currentWord:', currentWord)
@@ -140,19 +145,46 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             drawerRef.current = data.drawer
         }
 
+        function handleScoresUpdated(data) {
+            onSetPlayers(data.players)
+        }
+
         function handleNextTurn(data) {
             const oldDrawer = drawerRef.current
             drawerRef.current = data.drawer
             
             setDrawer(data.drawer)
+            setCurrentRound(data.currentRound)
             setCurrentWord(data.word)
             setGuessInput('')
             setHasGuessedCorrectly(false)
             setShouldClearCanvas(true)
             setTimeout(() => setShouldClearCanvas(false), 100)
             onSetPlayers(data.players)
+            setTransitioning(false)
 
             if (oldDrawer?.id === socket.id && localStreamRef.current) {
+                Object.values(peerConnectionsRef.current).forEach(pc => {
+                    const sender = pc.getSenders().find(s => s.track?.kind === 'video')
+                    if (sender) {
+                        sender.replaceTrack(localStreamRef.current.getVideoTracks()[0])
+                    }
+                })
+            }
+        }
+
+        function handleRoundEnding(data) {
+            setTransitioning(true)
+            setNextDrawerName(data.nextDrawer.username)
+        }
+
+        function handleGameOver(data) {
+            setGameOver(true)
+            setFinalScores(data.players)
+            onSetPlayers(data.players)
+            setTransitioning(false)
+
+            if (localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
                     const sender = pc.getSenders().find(s => s.track?.kind === 'video')
                     if (sender) {
@@ -168,10 +200,14 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
 
+
         socket.on('gameStarted', handleGameStart)
         socket.on('playerLeft', handlePlayerLeft)
         socket.on('playerJoined', handlePlayerJoined)
+        socket.on('scoresUpdated', handleScoresUpdated)
         socket.on('nextTurn', handleNextTurn)
+        socket.on('roundEnding', handleRoundEnding)
+        socket.on('gameOver', handleGameOver)
         socket.on('timeUpdate', handleTimeUpdate)
         socket.on('error', handleError)
 
@@ -179,7 +215,10 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             socket.off('gameStarted', handleGameStart)
             socket.off('playerJoined', handlePlayerJoined)
             socket.off('playerLeft', handlePlayerLeft)
+            socket.off('scoresUpdated', handleScoresUpdated)
             socket.off('nextTurn', handleNextTurn)
+            socket.off('roundEnding', handleRoundEnding)
+            socket.off('gameOver', handleGameOver)
             socket.off('timeUpdate', handleTimeUpdate)
             socket.off('error', handleError)
         }
@@ -200,11 +239,11 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     // Dimensions of the screen
     const { width, height } = useWindowDimensions()
 
-    const camWidth = width * 0.5
-    const camHeight = camWidth * (9/16)
+    const camWidth = Math.round(width * 0.5)
+    const camHeight = Math.round(camWidth * (9 / 16))
 
-    const miniCamHeight = height / 8
-    const miniCamWidth = miniCamHeight * (16/9)
+    const miniCamHeight = Math.round(height / 8)
+    const miniCamWidth = Math.round(miniCamHeight * (16 / 9))
 
 
 
@@ -307,11 +346,11 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                 }
             })
 
-socket.emit('answer', {
-    to: data.from,
-    from: socket.id,
-    answer: pc.localDescription
-})
+            socket.emit('answer', {
+                to: data.from,
+                from: socket.id,
+                answer: pc.localDescription
+            })
 
             console.log('received offer, creating answer for:', data.from)
         }
@@ -364,13 +403,13 @@ socket.emit('answer', {
 
 
     return (
-        <div className='flex flex-col h-screen justify-center items-center'>
+        <div className='flex flex-col h-screen justify-center items-center mx-0.5'>
             <div>
                 <p className='absolute top-10'>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <span>| {currentWord}</span>}</p>
             </div>
 
             <div className='relative flex items-center'>
-                <div className='absolute right-full flex flex-col mr-0.5'>
+                <div className='absolute right-full flex flex-col'>
                     {players.map(p => (
                         <div key={p.id} className='leading-none'>
                             {p.id === socket.id 
@@ -387,7 +426,7 @@ socket.emit('answer', {
 
 
 
-               <div>
+               <div style={{ position: 'relative'}}>
                     <GameScreen camWidth={camWidth} 
                         camHeight={camHeight} 
                         localStream={localStream} 
@@ -398,7 +437,29 @@ socket.emit('answer', {
                         remoteStreams={remoteStreams} 
                         onCompositeCanvas={onCompositeCanvas} 
                         setTimeLeft={setTimeLeft} 
-                        shouldClear={shouldClearCanvas} />
+                        shouldClear={shouldClearCanvas}
+                        gameOver={gameOver}
+                        finalScores={finalScores}
+
+                         />
+
+                    {transitioning && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            color: 'white',
+                            fontSize: '1.5rem'
+                        }}>
+                            {nextDrawerName} is drawing next!
+                        </div>
+                    )}
                 </div>
 
 
