@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
 import { detectOneFinger, detectFiveFingers, detectWebslinger } from '../detect'
 
-export default function Camera({ camWidth, camHeight, canDraw, stream, onCompositeCanvas, shouldClear }) {
+export default function Camera({ camWidth, camHeight, canDraw, stream, onCompositeCanvas, shouldClear, brushColor, brushSize, eraserSize }) {
     const videoRef = useRef(null)
     const videoCanvasRef = useRef(null)
     const drawCanvasRef = useRef(null)
@@ -18,9 +18,14 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
     const compositeCalledRef = useRef(false)
 
     const DELAY = 0.7
-    const brushColor = '#000000'
-    const brushSize = 15
-    const eraserSize = 50
+
+    const brushColorRef = useRef(brushColor)
+    const brushSizeRef = useRef(brushSize)
+    const eraserSizeRef = useRef(eraserSize)
+
+    useEffect(() => { brushColorRef.current = brushColor }, [brushColor])
+    useEffect(() => { brushSizeRef.current = brushSize }, [brushSize])
+    useEffect(() => { eraserSizeRef.current = eraserSize }, [eraserSize])
 
     // Initialize MediaPipe
     useEffect(() => {
@@ -169,8 +174,8 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
                             drawCtx.beginPath()
                             drawCtx.moveTo(state.prevX, state.prevY)
                             drawCtx.lineTo(ix, iy)
-                            drawCtx.strokeStyle = brushColor
-                            drawCtx.lineWidth = brushSize
+                            drawCtx.strokeStyle = brushColorRef.current
+                            drawCtx.lineWidth = brushSizeRef.current
                             drawCtx.lineCap = 'round'
                             drawCtx.stroke()
                         }
@@ -193,7 +198,7 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
                             drawCtx.moveTo(state.prevX, state.prevY)
                             drawCtx.lineTo(ex, ey)
                             drawCtx.strokeStyle = 'rgba(0,0,0,1)'
-                            drawCtx.lineWidth = eraserSize
+                            drawCtx.lineWidth = eraserSizeRef.current
                             drawCtx.lineCap = 'round'
                             drawCtx.globalCompositeOperation = 'destination-out'
                             drawCtx.stroke()

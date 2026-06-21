@@ -5,6 +5,7 @@ import PlaceholderCam from './PlaceholderCam';
 import RemoteCam from './RemoteCam';
 import LocalCam from './LocalCam';
 import GameScreen from './GameScreen';
+import BrushSettings from './BrushSettings';
 
 import socket from '../socket'
 
@@ -55,6 +56,11 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
     const [ nextDrawerName, setNextDrawerName ] = useState('')
     const [ gameOver, setGameOver ] = useState(false)
     const [ finalScores, setFinalScores ] = useState([])
+
+    // Brush Settings
+    const [ brushColor, setBrushColor ] = useState('#ffffff')
+    const [ brushSize, setBrushSize ] = useState(15)
+    const [ eraserSize, setEraserSize ] = useState(50)
 
    function handleGuess(guess) {
     console.log('guess:', guess, 'currentWord:', currentWord)
@@ -440,7 +446,9 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                         shouldClear={shouldClearCanvas}
                         gameOver={gameOver}
                         finalScores={finalScores}
-
+                        brushColor={brushColor}
+                        brushSize={brushSize}
+                        eraserSize={eraserSize}
                          />
 
                     {transitioning && (
@@ -467,9 +475,20 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
                 <div className='absolute left-full flex flex-col'>
-                    {players.map(p => (
+                    {/* {players.map(p => (
                         <div key={p.id} className='whitespace-nowrap'>{p.username} | {p.score}</div>
-                    ))}
+                    ))} */}
+
+                    <BrushSettings 
+                        brushColor={brushColor}
+                        setBrushColor={setBrushColor}
+                        brushSize={brushSize}
+                        setBrushSize={setBrushSize}
+                        eraserSize={eraserSize}
+                        setEraserSize={setEraserSize}
+                        camWidth={camWidth}
+                        camHeight={camHeight}
+                    />
                 </div>
             </div>
 

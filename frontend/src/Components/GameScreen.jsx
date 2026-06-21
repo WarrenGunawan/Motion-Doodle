@@ -8,7 +8,7 @@ import socket from '../socket'
 
 
 
-function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, code, drawer, remoteStreams, onCompositeCanvas, shouldClear, gameOver, finalScores}) {
+function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, code, drawer, remoteStreams, onCompositeCanvas, shouldClear, gameOver, finalScores, brushColor, brushSize, eraserSize }) {
     const [ rounds, setRounds ] = useState(1)
 
     function startGame() {
@@ -48,7 +48,15 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
         if (drawer.id === socket.id) {
             return (
                 <div className='mx-3'>
-                    <Camera camWidth={camWidth} camHeight={camHeight} canDraw={true} stream={localStream} onCompositeCanvas={onCompositeCanvas} shouldClear={shouldClear}/>
+                    <Camera camWidth={camWidth} 
+                        camHeight={camHeight} 
+                        canDraw={true} stream={localStream} 
+                        onCompositeCanvas={onCompositeCanvas} 
+                        shouldClear={shouldClear}
+                        brushColor={brushColor}
+                        brushSize={brushSize}
+                        eraserSize={eraserSize}
+                    />
                 </div>
             )
         } else {
