@@ -128,6 +128,8 @@ def startTurnTimer(code):
     lobbies[code]['turnId'] = lobbies[code].get('turnId', 0) + 1
     my_turn_id = lobbies[code]['turnId']
 
+    socketio.emit('timeUpdate', { 'timeLeft': 60 }, room=code)
+
     def tick():
         if not lobbies.get(code):
             return
