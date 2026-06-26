@@ -252,6 +252,7 @@ export default function Camera({ camWidth, camHeight, canDraw, stream, onComposi
                 height: `${camHeight}px`,
                 overflow: 'hidden',
                 backgroundColor: 'purple',
+                borderRadius: '16px',
                 lineHeight: 0,
                 fontSize: 0,
             }}
