@@ -37,6 +37,11 @@ function useWindowDimensions() {
 function Lobby({ isHost, username, code, players, onSetPlayers }) {
     // Random Word Selection
     const [ currentWord, setCurrentWord ] = useState('')
+    const [ currentWordPlaceholder, setCurrentWordPlaceholder ] = useState('')
+
+    function generatePlaceholder(word) {
+        return word.split('').map(char => char === ' ' ? ' ' : '_').join(' ')
+    }
 
 
     // WebRTC assets
@@ -151,6 +156,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setGameStarted(true)
             setDrawer(data.drawer)
             drawerRef.current = data.drawer
+            setCurrentWordPlaceholder(generatePlaceholder(currentWord))
         }
 
         function handleScoresUpdated(data) {
@@ -170,6 +176,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setTimeout(() => setShouldClearCanvas(false), 100)
             onSetPlayers(data.players)
             setTransitioning(false)
+            setCurrentWordPlaceholder(generatePlaceholder(currentWord))
 
             if (oldDrawer?.id === socket.id && localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -203,7 +210,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
         }
 
         function handleTimeUpdate(data) {
-            setTimeLeft(data.timeLeft)
+            setTimeLeft(String(data.timeLeft).padStart(2, '0'))
         }
 
 
@@ -421,12 +428,21 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                 width: '100vw',
                 margin: 0
             }}>
-            <div>
-                <p>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <span>| {currentWord}</span>}</p>
+            <div className='flex flex-col justify-center items-center'>
+                <p className='absolute top-0'>{code}</p>
+                <div className='flex flex-row mb-5'>
+                    <div className='flex justify-center items-center color3 text-5xl w-15 h-15 rounded-full'>
+                        {(gameOver || gameStarted) ? <p>{timeLeft}</p> : <p>00</p>}
+                    </div>
+
+                    <div className='flex justify-center items-center color3 text-3xl w-100 h-15 rounded-full ml-5'>
+                        {(drawer || players[0])?.id === socket.id ? <p>{currentWord}</p> : <p>{currentWordPlaceholder}</p>}
+                    </div>
+                </div>
             </div>
 
-            <div className='relative flex items-center'>
-                <div className='absolute right-full flex flex-col color3 p-5'>
+            <div className='flex items-center'>
+                <div className='flex flex-col color3 p-5 rounded-xl'>
                     {players.map(p => (
                         <div key={p.id} className='leading-none'>
                             {p.id === socket.id 
@@ -442,84 +458,77 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
 
+                <div className='flex flex-row color3 p-5 ml-5 rounded-3xl'>
+                    <div style={{}}>
+                        <GameScreen camWidth={camWidth} 
+                            camHeight={camHeight} 
+                            localStream={localStream} 
+                            isHost={isHost} 
+                            gameStarted={gameStarted} 
+                            code={code} 
+                            drawer={drawer || players[0]} 
+                            remoteStreams={remoteStreams} 
+                            onCompositeCanvas={onCompositeCanvas} 
+                            setTimeLeft={setTimeLeft} 
+                            shouldClear={shouldClearCanvas}
+                            gameOver={gameOver}
+                            finalScores={finalScores}
+                            brushColor={brushColor}
+                            brushSize={brushSize}
+                            eraserSize={eraserSize}
+                            />
 
-               <div style={{ position: 'relative'}}>
-                    <GameScreen camWidth={camWidth} 
-                        camHeight={camHeight} 
-                        localStream={localStream} 
-                        isHost={isHost} 
-                        gameStarted={gameStarted} 
-                        code={code} 
-                        drawer={drawer || players[0]} 
-                        remoteStreams={remoteStreams} 
-                        onCompositeCanvas={onCompositeCanvas} 
-                        setTimeLeft={setTimeLeft} 
-                        shouldClear={shouldClearCanvas}
-                        gameOver={gameOver}
-                        finalScores={finalScores}
-                        brushColor={brushColor}
-                        brushSize={brushSize}
-                        eraserSize={eraserSize}
-                         />
+                        {transitioning && (
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                color: 'white',
+                                fontSize: '1.5rem'
+                            }}>
+                                {nextDrawerName} is drawing next!
+                            </div>
+                        )}
+                    </div>
+                
 
-                    {transitioning && (
-                        <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            color: 'white',
-                            fontSize: '1.5rem'
-                        }}>
-                            {nextDrawerName} is drawing next!
-                        </div>
-                    )}
+
+                        <BrushSettings 
+                            brushColor={brushColor}
+                            setBrushColor={setBrushColor}
+                            brushSize={brushSize}
+                            setBrushSize={setBrushSize}
+                            eraserSize={eraserSize}
+                            setEraserSize={setEraserSize}
+                            camWidth={camWidth}
+                            camHeight={camHeight}
+                        />
                 </div>
 
 
 
 
-
-                <div className='absolute left-full flex flex-col '>
-                    {/* {players.map(p => (
-                        <div key={p.id} className='whitespace-nowrap'>{p.username} | {p.score}</div>
-                    ))} */}
-
-                    <BrushSettings 
-                        brushColor={brushColor}
-                        setBrushColor={setBrushColor}
-                        brushSize={brushSize}
-                        setBrushSize={setBrushSize}
-                        eraserSize={eraserSize}
-                        setEraserSize={setEraserSize}
-                        camWidth={camWidth}
-                        camHeight={camHeight}
-                    />
+                <div>
+                    {(drawer || players[0])?.id !== socket.id &&
+                        <input style={{}}
+                            value={guessInput} 
+                            disabled={hasGuessedCorrectly}
+                            onChange={(e) => setGuessInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if(e.key == 'Enter') {
+                                    handleGuess(guessInput)
+                                }
+                            }}
+                            className='w-30 h-8 bg-black text-white'
+                        />
+                    }
                 </div>
-            </div>
-
-
-
-
-            <div>
-                {(drawer || players[0])?.id !== socket.id &&
-                    <input style={{}}
-                        value={guessInput} 
-                        disabled={hasGuessedCorrectly}
-                        onChange={(e) => setGuessInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if(e.key == 'Enter') {
-                                handleGuess(guessInput)
-                            }
-                        }}
-                        className='w-30 h-8 bg-black text-white'
-                    />
-                }
             </div>
         </div>
     )

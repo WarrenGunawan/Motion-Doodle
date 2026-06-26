@@ -58,7 +58,7 @@ function BrushSettings({ brushColor, setBrushColor, brushSize, setBrushSize, era
 
 
     return (
-        <div className='flex flex-col justify-center items-center color3 py-5 px-3'>
+        <div className='flex flex-col justify-center items-center'>
             <div className='grid grid-cols-2 gap-2'>
                 {Object.entries(colors).map(([ color, hexCode ]) => (
                     <button key={color} 
@@ -75,13 +75,11 @@ function BrushSettings({ brushColor, setBrushColor, brushSize, setBrushSize, era
                 ))}
             </div>
 
-            <div className='flex flex-row mx-5' style={{ width: panelWidth, minWidth: 0 }} >
-                <p>{brushSize}</p>
+            <div className='flex flex-row m-5' style={{ width: panelWidth, minWidth: 0 }} >
                 <input style={{ marginLeft: 5, flex: 1, minWidth: 0, width: '100%' }} type='range' id='numericSlider' min='5' max='50' value={brushSize} onChange={(e) => {setBrushSize(Number(e.target.value))}}/>
             </div>
 
             <div className='flex flex-row mx-5' style={{ width: panelWidth, minWidth: 0 }} >
-                <p>{eraserSize}</p>
                 <input style={{ marginLeft: 5, flex: 1, minWidth: 0, width: '100%'  }} type='range' id='numericSlider' min='5' max='50' value={eraserSize} onChange={(e) => {setEraserSize(Number(e.target.value))}}/>
             </div>
         </div>
