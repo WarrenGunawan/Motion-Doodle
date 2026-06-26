@@ -58,7 +58,7 @@ function BrushSettings({ brushColor, setBrushColor, brushSize, setBrushSize, era
 
 
     return (
-        <div className='flex flex-col justify-center items-center mx-5'>
+        <div className='flex flex-col justify-center items-center color3 py-5 px-3'>
             <div className='grid grid-cols-2 gap-2'>
                 {Object.entries(colors).map(([ color, hexCode ]) => (
                     <button key={color} 

@@ -32,7 +32,7 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
     if (!gameStarted) {
         if (isHost) {
             return (
-                <div className='flex flex-col justify-center items-center bg-blue-500 mx-3' style={{ width: camWidth, height: camHeight }}>
+                <div className='flex flex-col justify-center items-center color4 mx-3' style={{ width: camWidth, height: camHeight }}>
                     <div>
                         <p>Value: {rounds}</p>
                         <input type='range' id='numericSlider' min='1' max='6' value={rounds} onChange={(e) => {setRounds(Number(e.target.value))}}/>
@@ -42,7 +42,7 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
                 </div>
             )
         } else {
-            return <div className='flex justify-center items-center bg-blue-500 mx-3' style={{ width: camWidth, height: camHeight }}/>
+            return <div className='flex justify-center items-center color4 mx-3' style={{ width: camWidth, height: camHeight }}/>
         }
     } else {
         if (drawer.id === socket.id) {

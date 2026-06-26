@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 
 import socket from '../socket'
 
+import HomeBackground from '../adrawn/HomeBackground.png'
+
 
 function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode, onSetUsername, onSetPlayers}) {
     const [ username, setUsername ] = useState('')
@@ -93,14 +95,23 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
 
 
     return (
-        <div className='flex items-center justify-center color4 p-1 rounded-lg mt-5'>
-            <div className='flex justify-center items-center color3 p-2 rounded-lg'>
-                <div className='flex flex-col justify-center items-center color2 p-4 rounded-lg'>
-                    <input className='my-2' value={username} onChange={e => checkUsername(e.target.value)} placeholder='Username' />
-                    <p>Start Your Own Lobby?</p>
-                    <button className='my-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75' onClick={checkStartLobby}>Start Lobby</button>
-                    <input className='my-2' value={code} onChange={e => checkCode(e.target.value)} placeholder='Room code' />
-                    <button className='my-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75' onClick={checkJoinLobby}>Join Lobby</button>
+        <div className='flex items-center justify-center color4 p-1 rounded-lg mt-5'
+            style={{
+                backgroundImage: `url(${HomeBackground})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                height: '100vh',
+                width: '100vw',
+                margin: 0
+            }}>
+            <div className='flex flex-col justify-center items-center color3 p-4 rounded-lg w-2/7 mt-10' style={{ alignSelf: 'flex-start' }}>
+                <input className='my-2 color4 w-full p-5 rounded-lg mb-3 text-xl' value={username} onChange={e => checkUsername(e.target.value)} placeholder='Username' />
+                <input className='my-2 w-7/8 p-3 rounded-lg color4' value={code} onChange={e => checkCode(e.target.value)} placeholder='Room code' />
+                <p className='mb-10 text-sm'>* Starting lobby doesn't need code *</p>
+                <div>
+                    <button className='my-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-lg color4 m-2 text-xl' onClick={checkStartLobby}>Start Lobby</button>
+                    <button className='my-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-lg color4 m-2 text-xl' onClick={checkJoinLobby}>Join Lobby</button>
                 </div>
             </div>
         </div>

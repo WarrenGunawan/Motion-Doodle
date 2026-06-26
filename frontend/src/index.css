@@ -2,24 +2,24 @@
 
 body {
     font-family: 'JetBrains Mono', monospace;
-    background-color: #FFEDCE;
+    background-color: #3A5A40;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .color1 {
-    background-color: #FFEDCE;
+    background-color: #3A5A40;
 }
 
 .color2 {
-    background-color: #FFC193;
+    background-color: #588157;
 }
 
 .color3 {
-    background-color: #FF8383;
+    background-color: #A3B18A;
 }
 
 .color4 {
-    background-color: #FF3737;
+    background-color: #DAD7CD;
 }

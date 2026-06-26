@@ -9,6 +9,8 @@ import BrushSettings from './BrushSettings';
 
 import socket from '../socket'
 
+import HomeBackground from '../adrawn/HomeBackground.png'
+
 
 function useWindowDimensions() {
     const [size, setSize] = useState({
@@ -409,13 +411,22 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
     return (
-        <div className='flex flex-col h-screen justify-center items-center mx-0.5'>
+        <div className='flex flex-col items-center justify-center color4 p-1 rounded-lg mt-5'
+            style={{
+                backgroundImage: `url(${HomeBackground})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                height: '100vh',
+                width: '100vw',
+                margin: 0
+            }}>
             <div>
-                <p className='absolute top-10'>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <span>| {currentWord}</span>}</p>
+                <p>{timeLeft} | {code} {(drawer || players[0])?.id === socket.id && <span>| {currentWord}</span>}</p>
             </div>
 
             <div className='relative flex items-center'>
-                <div className='absolute right-full flex flex-col'>
+                <div className='absolute right-full flex flex-col color3 p-5'>
                     {players.map(p => (
                         <div key={p.id} className='leading-none'>
                             {p.id === socket.id 
@@ -474,7 +485,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
 
-                <div className='absolute left-full flex flex-col'>
+                <div className='absolute left-full flex flex-col '>
                     {/* {players.map(p => (
                         <div key={p.id} className='whitespace-nowrap'>{p.username} | {p.score}</div>
                     ))} */}
@@ -497,7 +508,8 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
             <div>
                 {(drawer || players[0])?.id !== socket.id &&
-                    <input value={guessInput} 
+                    <input style={{}}
+                        value={guessInput} 
                         disabled={hasGuessedCorrectly}
                         onChange={(e) => setGuessInput(e.target.value)}
                         onKeyDown={(e) => {
