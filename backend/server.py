@@ -204,38 +204,67 @@ def handleCorrectGuess(data):
 
     if code not in lobbies:
         return
-    
-    next_index = (lobbies[code]['drawerIndex'] + 1) % len(lobbies[code]['players'])
-    next_drawer = lobbies[code]['players'][next_index]
-
-    socketio.emit('roundEnding', {
-        'nextDrawer':  next_drawer
-    }, room=code)
 
     player_id = request.sid
+    lobby = lobbies[code]
 
-    is_first = len(lobbies[code]['correctGuessers']) == 0
-    lobbies[code]['correctGuessers'].add(player_id)
-    
-    points = round(((lobbies[code]['timeLeft'] / 60) * 450) + 50)
+    players = lobby['players']
+    current = lobby['drawerIndex']
+    drawer_id = players[current]['id']
 
+    if player_id == drawer_id:
+        return
+
+    if player_id in lobby['correctGuessers']:
+        return
+
+    lobby['correctGuessers'].add(player_id)
+
+    points = round(((lobby['timeLeft'] / 60) * 450) + 50)
     addScore(code, player_id, points)
 
     socketio.emit('scoresUpdated', {
-        'players': lobbies[code]['players']
+        'players': lobby['players']
     }, room=code)
 
-    non_drawer_count = len(lobbies[code]['players']) - 1
+    non_drawer_count = len(players) - 1
 
-    if len(lobbies[code]['correctGuessers']) >= non_drawer_count:
-        players = lobbies[code]['players']
-        current = lobbies[code]['drawerIndex']
-        drawer_id = players[current]['id']
-        bonus = len(lobbies[code]['correctGuessers']) * 50
+    if len(lobby['correctGuessers']) >= non_drawer_count:
+        bonus = len(lobby['correctGuessers']) * 50
         addScore(code, drawer_id, bonus)
 
         socketio.emit('scoresUpdated', {
-            'players': lobbies[code]['players']
+            'players': lobby['players']
+        }, room=code)
+
+        next_index = (current + 1) % len(players)
+
+        game_will_end = (
+            next_index == 0 and
+            lobby.get('currentRound', 1) >= lobby['numRounds']
+        )
+
+        if game_will_end:
+            lobby['turnId'] = lobby.get('turnId', 0) + 1
+
+            lobby['started'] = False
+            lobby['currentWord'] = ''
+            lobby['correctGuessers'] = set()
+
+            socketio.emit('timeUpdate', {
+                'timeLeft': 0
+            }, room=code)
+
+            socketio.emit('gameOver', {
+                'players': lobby['players']
+            }, room=code)
+
+            return
+
+        next_drawer = players[next_index]
+
+        socketio.emit('roundEnding', {
+            'nextDrawer': next_drawer
         }, room=code)
 
         def delayed_advance():
