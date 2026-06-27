@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import socket from '../socket'
 
 import HomeBackground from '../adrawn/HomeBackground.png'
+import TitleLogo from  '../adrawn/TitleLogo2.png'
 
 
 function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode, onSetUsername, onSetPlayers}) {
@@ -95,7 +96,7 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
 
 
     return (
-        <div className='flex items-center justify-center'
+        <div className='flex items-center flex-col pt-10'
             style={{
                 backgroundImage: `url(${HomeBackground})`,
                 backgroundSize: 'cover',
@@ -105,13 +106,17 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
                 width: '100vw',
                 margin: 0
             }}>
-            <div className='flex flex-col justify-center items-center color3 p-4 rounded-3xl w-2/7 mt-10' style={{ alignSelf: 'flex-start' }}>
-                <input className='color4 w-full p-5 rounded-xl mb-3 text-xl' value={username} onChange={e => checkUsername(e.target.value)} placeholder='Username' />
-                <input className='my-2 w-7/8 p-3 rounded-xl color4' value={code} onChange={e => checkCode(e.target.value)} placeholder='Room code' />
+            <div className='mb-5'>
+                <img src={TitleLogo} alt='DoodleCam Logo' className='w-[45vw] max-w-[80vw]'/>
+            </div>
+
+            <div className='flex flex-col justify-center items-center color3 p-4 rounded-3xl w-2/7'>
+                <input className='color4 w-full p-4 rounded-xl mb-3 text-3xl' value={username} onChange={e => checkUsername(e.target.value)} placeholder='Username' />
+                <input className='my-2 w-7/8 p-2 rounded-xl color4 text-xl' value={code} onChange={e => checkCode(e.target.value)} placeholder='Room code' />
                 <p className='mb-10 text-sm'>* Starting lobby doesn't need code *</p>
                 <div>
-                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color4 mx-2 text-xl' onClick={checkStartLobby}>Start Lobby</button>
-                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color4 mx-2 text-xl' onClick={checkJoinLobby}>Join Lobby</button>
+                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color4 mx-3 text-xl' onClick={checkStartLobby}>Start Lobby</button>
+                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color4 mx-3 text-xl' onClick={checkJoinLobby}>Join Lobby</button>
                 </div>
             </div>
         </div>

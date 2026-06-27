@@ -57,9 +57,27 @@ function LocalCam({ stream, camWidth, camHeight }) {
     }, [camWidth, camHeight, stream])
 
     return (
-        <div style={{ position: 'relative', display: 'block' }}>
-            <video ref={videoRef} autoPlay muted playsInline style={{ display: 'none', borderRadius: '8px' }} />
-            <canvas ref={canvasRef} style={{ display: 'block', borderRadius: '8px' }} />
+        <div
+            style={{
+                position: 'relative',
+                display: 'block',
+                width: `${camWidth}px`,
+                height: `${camHeight}px`,
+                overflow: 'hidden',
+                borderRadius: '16px',
+                lineHeight: 0,
+                fontSize: 0,
+            }}
+        >
+            <video ref={videoRef} autoPlay muted playsInline style={{ display: 'none' }} />
+            <canvas
+                ref={canvasRef}
+                style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '100%',
+                }}
+            />
         </div>
     )
 }

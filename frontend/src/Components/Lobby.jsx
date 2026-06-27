@@ -156,7 +156,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setGameStarted(true)
             setDrawer(data.drawer)
             drawerRef.current = data.drawer
-            setCurrentWordPlaceholder(generatePlaceholder(currentWord))
+            setCurrentWordPlaceholder(generatePlaceholder(data.word))
         }
 
         function handleScoresUpdated(data) {
@@ -176,7 +176,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setTimeout(() => setShouldClearCanvas(false), 100)
             onSetPlayers(data.players)
             setTransitioning(false)
-            setCurrentWordPlaceholder(generatePlaceholder(currentWord))
+            setCurrentWordPlaceholder(generatePlaceholder(data.word))
 
             if (oldDrawer?.id === socket.id && localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -195,9 +195,18 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
         function handleGameOver(data) {
             setGameOver(true)
+            setGameStarted(false)
             setFinalScores(data.players)
             onSetPlayers(data.players)
+
             setTransitioning(false)
+            setNextDrawerName('')
+
+            setTimeLeft('00')
+            setCurrentWord('')
+            setCurrentWordPlaceholder('')
+            setGuessInput('')
+            setHasGuessedCorrectly(false)
 
             if (localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -431,12 +440,12 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             <div className='flex flex-col justify-center items-center'>
                 <p className='absolute top-0'>{code}</p>
                 <div className='flex flex-row mb-5'>
-                    <div className='flex justify-center items-center color3 text-5xl w-15 h-15 rounded-full'>
-                        {(gameOver || gameStarted) ? <p>{timeLeft}</p> : <p>00</p>}
+                    <div className='flex justify-center items-center color3 text-5xl w-20 h-20 rounded-full'>
+                        <p>{gameOver || !gameStarted ? '00' : timeLeft}</p>
                     </div>
 
-                    <div className='flex justify-center items-center color3 text-3xl w-100 h-15 rounded-full ml-5'>
-                        {(drawer || players[0])?.id === socket.id ? <p>{currentWord}</p> : <p>{currentWordPlaceholder}</p>}
+                    <div className='flex justify-center items-center color3 text-4xl w-100 h-20 rounded-full ml-5'>
+                        {gameOver || !gameStarted ? (<p></p>) : (drawer || players[0])?.id === socket.id ? (<p>{currentWord}</p>) : (<p>{currentWordPlaceholder}</p>)}
                     </div>
                 </div>
             </div>
@@ -459,7 +468,12 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
                 <div className='flex flex-row color3 p-5 ml-5 rounded-3xl'>
-                    <div style={{}}>
+                    <div style={{position: 'relative',
+                        width: camWidth,
+                        height: camHeight,
+                        overflow: 'hidden',
+                        borderRadius: '16px'
+                    }}>
                         <GameScreen camWidth={camWidth} 
                             camHeight={camHeight} 
                             localStream={localStream} 
@@ -483,14 +497,15 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                                 position: 'absolute',
                                 top: 0,
                                 left: 0,
-                                width: '100%',
-                                height: '100%',
+                                width: camWidth,
+                                height: camHeight,
                                 backgroundColor: 'rgba(0, 0, 0, 0.6)',
                                 display: 'flex',
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 color: 'white',
-                                fontSize: '1.5rem'
+                                fontSize: '1.5rem',
+                                borderRadius: '16px'
                             }}>
                                 {nextDrawerName} is drawing next!
                             </div>
@@ -510,25 +525,22 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                             camHeight={camHeight}
                         />
                 </div>
+            </div>
 
-
-
-
-                <div>
-                    {(drawer || players[0])?.id !== socket.id &&
-                        <input style={{}}
-                            value={guessInput} 
-                            disabled={hasGuessedCorrectly}
-                            onChange={(e) => setGuessInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if(e.key == 'Enter') {
-                                    handleGuess(guessInput)
-                                }
-                            }}
-                            className='w-30 h-8 bg-black text-white'
-                        />
-                    }
-                </div>
+            <div>
+                {(drawer || players[0])?.id !== socket.id &&
+                    <input style={{}}
+                        value={guessInput} 
+                        disabled={hasGuessedCorrectly}
+                        onChange={(e) => setGuessInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if(e.key == 'Enter') {
+                                handleGuess(guessInput)
+                            }
+                        }}
+                        className='w-30 h-8 bg-black text-white'
+                    />
+                }
             </div>
         </div>
     )
