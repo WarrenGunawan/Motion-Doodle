@@ -10,6 +10,7 @@ import BrushSettings from './BrushSettings';
 import socket from '../socket'
 
 import HomeBackground from '../adrawn/HomeBackground.png'
+import Logo from '../adrawn/Logo.png'
 
 
 function useWindowDimensions() {
@@ -427,7 +428,8 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
 
 
     return (
-        <div className='flex flex-col items-center justify-center color4 p-1 rounded-lg mt-5'
+        <div
+            className='relative color4 overflow-hidden'
             style={{
                 backgroundImage: `url(${HomeBackground})`,
                 backgroundSize: 'cover',
@@ -436,111 +438,149 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                 height: '100vh',
                 width: '100vw',
                 margin: 0
-            }}>
-            <div className='flex flex-col justify-center items-center'>
-                <p className='absolute top-0'>{code}</p>
-                <div className='flex flex-row mb-5'>
-                    <div className='flex justify-center items-center color3 text-5xl w-20 h-20 rounded-full'>
-                        <p>{gameOver || !gameStarted ? '00' : timeLeft}</p>
-                    </div>
-
-                    <div className='flex justify-center items-center color3 text-4xl w-100 h-20 rounded-full ml-5'>
-                        {gameOver || !gameStarted ? (<p></p>) : (drawer || players[0])?.id === socket.id ? (<p>{currentWord}</p>) : (<p>{currentWordPlaceholder}</p>)}
-                    </div>
-                </div>
+            }}
+        >
+            <div className='absolute top-0 right-0 color3 pl-5 pb-5 rounded-bl-3xl z-30'>
+                <p
+                    className='text-3xl color4 px-5 py-3'
+                    style={{ borderBottomLeftRadius: '12px' }}
+                >
+                    Room Code: {code}
+                </p>
             </div>
 
-            <div className='flex items-center'>
-                <div className='flex flex-col color3 p-5 rounded-xl'>
-                    {players.map(p => (
-                        <div key={p.id} className='leading-none'>
-                            {p.id === socket.id 
-                                ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/> 
-                                : remoteStreams[p.id]
-                                    ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                    : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                            } 
-                        </div>
-                    ))}
-                </div>
+            <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10'>
+                <div className='relative flex items-center'>
+                    <div
+                        className='absolute left-1/2 -translate-x-1/2 z-20'
+                        style={{ bottom: 'calc(100% + 20px)' }}>
+                        <div className='relative flex justify-center items-center'>
 
-
-
-
-                <div className='flex flex-row color3 p-5 ml-5 rounded-3xl'>
-                    <div style={{position: 'relative',
-                        width: camWidth,
-                        height: camHeight,
-                        overflow: 'hidden',
-                        borderRadius: '16px'
-                    }}>
-                        <GameScreen camWidth={camWidth} 
-                            camHeight={camHeight} 
-                            localStream={localStream} 
-                            isHost={isHost} 
-                            gameStarted={gameStarted} 
-                            code={code} 
-                            drawer={drawer || players[0]} 
-                            remoteStreams={remoteStreams} 
-                            onCompositeCanvas={onCompositeCanvas} 
-                            setTimeLeft={setTimeLeft} 
-                            shouldClear={shouldClearCanvas}
-                            gameOver={gameOver}
-                            finalScores={finalScores}
-                            brushColor={brushColor}
-                            brushSize={brushSize}
-                            eraserSize={eraserSize}
-                            />
-
-                        {transitioning && (
-                            <div style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: camWidth,
-                                height: camHeight,
-                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                color: 'white',
-                                fontSize: '1.5rem',
-                                borderRadius: '16px'
-                            }}>
-                                {nextDrawerName} is drawing next!
+                            <div className='absolute right-[calc(100%+20px)] top-1/2 -translate-y-1/2'>
+                                <div className='flex justify-center items-center color3 text-5xl w-20 h-20 rounded-full'>
+                                    <p>{gameOver || !gameStarted ? '00' : timeLeft}</p>
+                                </div>
                             </div>
-                        )}
+
+                            <div className='flex justify-center items-center color4 text-4xl w-100 h-20 rounded-full'>
+                                {gameOver || !gameStarted ? (
+                                    <p></p>
+                                ) : (drawer || players[0])?.id === socket.id ? (
+                                    <p>{currentWord}</p>
+                                ) : (
+                                    <p>{currentWordPlaceholder}</p>
+                                )}
+                            </div>
+
+                            <div className='absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2'>
+                                <img
+                                    src={Logo}
+                                    alt='Logo'
+                                    className='h-[100px] w-auto max-w-none object-contain shrink-0'
+                                />
+                            </div>
+
+                        </div>
                     </div>
-                
 
+                    <div className='flex items-center'>
+                        <div className='flex flex-col color3 p-5 rounded-3xl'>
+                            {players.map(p => (
+                                <div key={p.id} className='leading-none'>
+                                    {p.id === socket.id 
+                                        ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/> 
+                                        : remoteStreams[p.id]
+                                            ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                            : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                    } 
+                                </div>
+                            ))}
+                        </div>
 
-                        <BrushSettings 
-                            brushColor={brushColor}
-                            setBrushColor={setBrushColor}
-                            brushSize={brushSize}
-                            setBrushSize={setBrushSize}
-                            eraserSize={eraserSize}
-                            setEraserSize={setEraserSize}
-                            camWidth={camWidth}
-                            camHeight={camHeight}
-                        />
+                        <div className='flex flex-row color3 py-5 pl-5 ml-5 rounded-3xl'>
+                            <div
+                                style={{
+                                    position: 'relative',
+                                    width: camWidth,
+                                    height: camHeight,
+                                    overflow: 'hidden',
+                                    borderRadius: '16px'
+                                }}
+                            >
+                                <GameScreen
+                                    camWidth={camWidth} 
+                                    camHeight={camHeight} 
+                                    localStream={localStream} 
+                                    isHost={isHost} 
+                                    gameStarted={gameStarted} 
+                                    code={code} 
+                                    drawer={drawer || players[0]} 
+                                    remoteStreams={remoteStreams} 
+                                    onCompositeCanvas={onCompositeCanvas} 
+                                    setTimeLeft={setTimeLeft} 
+                                    shouldClear={shouldClearCanvas}
+                                    gameOver={gameOver}
+                                    finalScores={finalScores}
+                                    brushColor={brushColor}
+                                    brushSize={brushSize}
+                                    eraserSize={eraserSize}
+                                />
+
+                                {transitioning && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: camWidth,
+                                            height: camHeight,
+                                            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            color: 'white',
+                                            fontSize: '1.5rem',
+                                            borderRadius: '16px'
+                                        }}
+                                    >
+                                        {nextDrawerName} is drawing next!
+                                    </div>
+                                )}
+                            </div>
+
+                            <BrushSettings 
+                                brushColor={brushColor}
+                                setBrushColor={setBrushColor}
+                                brushSize={brushSize}
+                                setBrushSize={setBrushSize}
+                                eraserSize={eraserSize}
+                                setEraserSize={setEraserSize}
+                                camWidth={camWidth}
+                                camHeight={camHeight}
+                            />
+                        </div>
+                    </div>
+
+                    <div
+                        className='absolute left-1/2 -translate-x-1/2 z-20'
+                        style={{ top: 'calc(100% + 20px)' }}
+                    >
+                        {(drawer || players[0])?.id !== socket.id &&
+                            <input
+                                value={guessInput} 
+                                disabled={hasGuessedCorrectly}
+                                onChange={(e) => setGuessInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if(e.key === 'Enter') {
+                                        handleGuess(guessInput)
+                                    }
+                                }}
+                                className='color4 w-full p-4 rounded-xl mb-3 text-3xl'
+                            />
+                        }
+                    </div>
+
                 </div>
-            </div>
-
-            <div>
-                {(drawer || players[0])?.id !== socket.id &&
-                    <input style={{}}
-                        value={guessInput} 
-                        disabled={hasGuessedCorrectly}
-                        onChange={(e) => setGuessInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if(e.key == 'Enter') {
-                                handleGuess(guessInput)
-                            }
-                        }}
-                        className='w-30 h-8 bg-black text-white'
-                    />
-                }
             </div>
         </div>
     )
