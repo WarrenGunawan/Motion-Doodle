@@ -5,6 +5,8 @@ import RemoteCam from './RemoteCam'
 
 import socket from '../socket'
 
+import PreGameScreen from '../adrawn/PreGameScreen.png'
+
 
 
 
@@ -17,7 +19,17 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
 
     if(gameOver) {
         return (
-            <div className='flex flex-col justify-center items-center bg-blue-500 mx-3' style={{ width: camWidth, height: camHeight }}>
+            <div className='flex flex-col justify-center items-center mr-5 color4 rounded-2xl' style={{
+                    backgroundImage: `url(${PreGameScreen})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    height: '100vh',
+                    width: '100vw',
+                    margin: 0,
+                    width: camWidth, 
+                    height: camHeight
+                }}>
                 <h2>Game Over!</h2>
                 {finalScores.sort((a, b) => b.score - a.score)
                     .map(p => (
@@ -32,13 +44,20 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
     if (!gameStarted) {
         if (isHost) {
             return (
-                <div className='flex flex-col justify-center items-center mr-5 color4 rounded-2xl' style={{ width: camWidth, height: camHeight }}>
-                    <div>
-                        <p>Value: {rounds}</p>
-                        <input type='range' id='numericSlider' min='1' max='6' value={rounds} onChange={(e) => {setRounds(Number(e.target.value))}}/>
-                    </div>
-
-                    <button className='flex p-5 justify-center items-center bg-black text-white rounded' onClick={startGame}>Start Game</button>
+                <div className='flex flex-col justify-center items-center mr-5 color4 rounded-2xl' style={{
+                        backgroundImage: `url(${PreGameScreen})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        height: '100vh',
+                        width: '100vw',
+                        margin: 0,
+                        width: camWidth, 
+                        height: camHeight
+                    }}>
+                    <p className='text-4xl'>Rounds: {rounds}</p>
+                    <input className='color3' type='range' id='numericSlider' min='1' max='6' value={rounds} onChange={(e) => {setRounds(Number(e.target.value))}}/>
+                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color3 mx-3 text-xl' onClick={startGame}>Start Game</button>
                 </div>
             )
         } else {

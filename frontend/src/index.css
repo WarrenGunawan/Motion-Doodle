@@ -28,3 +28,7 @@ body {
 .color5 {
     background-color: #FFFFFF;
 }
+
+input[type=range] {
+    accent-color: #FFFFFF;
+}

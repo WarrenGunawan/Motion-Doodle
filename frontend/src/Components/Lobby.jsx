@@ -484,15 +484,18 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                     </div>
 
                     <div className='flex items-center'>
-                        <div className='flex flex-col color3 p-5 rounded-3xl'>
+                        <div className='flex flex-col color3 p-5 rounded-3xl gap-3'>
                             {players.map(p => (
-                                <div key={p.id} className='leading-none'>
-                                    {p.id === socket.id 
-                                        ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/> 
-                                        : remoteStreams[p.id]
-                                            ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                            : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                    } 
+                                <div key={p.id} className='leading-none justify-center items-center'>
+                                    <div className='flex flex-col justify-center items-center color4 rounded-b-2xl rounded-t-2xl' >
+                                       <p className='p-1'>{p.username} - {p.score}</p> 
+                                        {p.id === socket.id 
+                                            ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/> 
+                                            : remoteStreams[p.id]
+                                                ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                                : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                        } 
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -565,7 +568,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                         className='absolute left-1/2 -translate-x-1/2 z-20'
                         style={{ top: 'calc(100% + 20px)' }}
                     >
-                        {(drawer || players[0])?.id !== socket.id &&
+                        {(drawer || players[0])?.id !== socket.id && gameStarted && !gameOver &&
                             <input
                                 value={guessInput} 
                                 disabled={hasGuessedCorrectly}
@@ -575,7 +578,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                                         handleGuess(guessInput)
                                     }
                                 }}
-                                className='color4 w-full p-4 rounded-xl mb-3 text-3xl'
+                                className='color4 w-full p-4 rounded-full mb-3 text-3xl'
                             />
                         }
                     </div>
