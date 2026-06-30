@@ -91,8 +91,15 @@ def handleJoinLobby(data):
 def handleLeaveLobby(data):
     code = data['roomCode']
 
-    lobbies[code]['players'] = [p for p in lobbies[code]['players'] if p['id'] != request.sid]
+    if code not in lobbies:
+        return
 
+    if lobbies[code]['host'] == request.sid:
+        socketio.emit('hostLeft', room=code)
+        del lobbies[code]
+        return
+
+    lobbies[code]['players'] = [p for p in lobbies[code]['players'] if p['id'] != request.sid]
     leave_room(code)
 
     if len(lobbies[code]['players']) == 0:
@@ -109,6 +116,11 @@ def handleDisconnect():
     for code in list(lobbies.keys()):
         players = lobbies[code]['players']
         if any(p['id'] == request.sid for p in players):
+            if lobbies[code]['host'] == request.sid:
+                socketio.emit('hostLeft', room=code)
+                del lobbies[code]
+                return
+
             lobbies[code]['players'] = [p for p in lobbies[code]['players'] if p['id'] != request.sid]
 
             if len(lobbies[code]['players']) == 0:
@@ -118,8 +130,32 @@ def handleDisconnect():
             emit('playerLeft', {
                 'players': lobbies[code]['players']
             }, room=code)
-
             break
+
+
+@socketio.on('playAgain')
+def handlePlayAgain(data):
+    code = data['roomCode']
+    
+    if code not in lobbies:
+        return
+
+    if request.sid != lobbies[code]['host']:
+        return
+
+    host_player = next(p for p in lobbies[code]['players'] if p['id'] == request.sid)
+    host_player['score'] = 0
+    
+    lobbies[code]['players'] = [host_player]
+    lobbies[code]['started'] = False
+    lobbies[code]['correctGuessers'] = set()
+    lobbies[code]['drawerIndex'] = 0
+    lobbies[code]['currentRound'] = 1
+    lobbies[code]['turnId'] = lobbies[code].get('turnId', 0) + 1 
+    
+    socketio.emit('lobbyReset', {
+        'players': lobbies[code]['players']
+    }, room=code)
 
 
 # Game Logic
