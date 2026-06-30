@@ -50,11 +50,22 @@ function App() {
     setScreen('lobby')
   }
 
+  function moveToHome() {
+    setScreen('home')
+    setPlayers([])
+    setCode('')
+    setUsername('')
+    setUsernameChosen(false)
+    setStartLobby(false)
+    setJoinLobby(false)
+    setIsHost(false)
+  }
+
 
   return (
     <div>
       {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} onStartLobby={setStartLobby} onJoinLobby={setJoinLobby} onIsHost={setIsHost} onSetCode={setCode} onSetUsername={setUsername} onSetPlayers={setPlayers}/>}
-      {screen === 'lobby' && <Lobby isHost={isHost} username={username} code={code} players={players} onSetPlayers={setPlayers}/>}
+      {screen === 'lobby' && <Lobby isHost={isHost} username={username} code={code} players={players} onSetPlayers={setPlayers} onMoveHome={moveToHome}/>}
     </div>
   )
 }

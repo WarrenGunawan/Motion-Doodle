@@ -35,7 +35,7 @@ function useWindowDimensions() {
 
 
 
-function Lobby({ isHost, username, code, players, onSetPlayers }) {
+function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
     // Random Word Selection
     const [ currentWord, setCurrentWord ] = useState('')
     const [ currentWordPlaceholder, setCurrentWordPlaceholder ] = useState('')
@@ -223,6 +223,31 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             setTimeLeft(String(data.timeLeft).padStart(2, '0'))
         }
 
+        function handleLobbyReset(data) {
+            onSetPlayers(data.players)
+            setGameStarted(false)
+            setGameOver(false)
+            setDrawer(null)
+            drawerRef.current = null
+            setCurrentWord('')
+            setCurrentWordPlaceholder('')
+            setTimeLeft(null)
+            setGuessInput('')
+            setHasGuessedCorrectly(false)
+            setShouldClearCanvas(false)
+            setTransitioning(false)
+            setFinalScores([])
+            setCurrentRound(1)
+
+            if (!isHost) {
+                socket.emit('joinLobby', { username, roomCode: code })
+            }
+        }
+
+        function handleHostLeft() {
+            onMoveHome()
+        }
+
 
 
 
@@ -235,6 +260,8 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
         socket.on('gameOver', handleGameOver)
         socket.on('timeUpdate', handleTimeUpdate)
         socket.on('error', handleError)
+        socket.on('lobbyReset', handleLobbyReset)
+        socket.on('hostLeft', handleHostLeft)
 
         return () => {
             socket.off('gameStarted', handleGameStart)
@@ -246,6 +273,8 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
             socket.off('gameOver', handleGameOver)
             socket.off('timeUpdate', handleTimeUpdate)
             socket.off('error', handleError)
+            socket.off('lobbyReset', handleLobbyReset)
+            socket.off('hostLeft', handleHostLeft)
         }
     }, [])
 
@@ -527,6 +556,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers }) {
                                     brushColor={brushColor}
                                     brushSize={brushSize}
                                     eraserSize={eraserSize}
+                                    onMoveHome={onMoveHome}
                                 />
 
                                 {transitioning && (
