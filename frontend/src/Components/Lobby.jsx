@@ -35,7 +35,7 @@ function useWindowDimensions() {
 
 
 
-function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
+function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, localStream, localStreamRef }) {
     // Random Word Selection
     const [ currentWord, setCurrentWord ] = useState('')
     const [ currentWordPlaceholder, setCurrentWordPlaceholder ] = useState('')
@@ -46,10 +46,8 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
 
 
     // WebRTC assets
-    const localStreamRef = useRef(null)
     const peerConnectionsRef = useRef({})
     const drawerRef = useRef(null)
-    const [ localStream, setLocalStream ] = useState(null)
     const [ remoteStreams, setRemoteStreams ] = useState({})
 
     // Game Logic
@@ -91,21 +89,15 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
             const newPlayer = data.players[data.players.length - 1]
             if (newPlayer.id === socket.id) return
 
-            if (!localStreamRef.current) {
-                await new Promise(resolve => {
-                    const interval = setInterval(() => {
-                        if (localStreamRef.current) {
-                            clearInterval(interval)
-                            resolve()
-                        }
-                    }, 100)
-                })
-            }
-
             const pc = createPeerConnection(newPlayer.id)
-            localStreamRef.current.getTracks().forEach(track => {
-                pc.addTrack(track, localStreamRef.current)
-            })
+
+            if (localStreamRef.current && localStreamRef.current.getVideoTracks().length > 0) {
+                localStreamRef.current.getTracks().forEach(track => {
+                    pc.addTrack(track, localStreamRef.current)
+                })
+            } else {
+                pc.addTransceiver('video', { direction: 'recvonly' })
+            }
 
             const offer = await pc.createOffer()
             await pc.setLocalDescription(offer)
@@ -301,27 +293,6 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
 
 
 
-    
-    // WebRTC logic
-    useEffect(() => {
-        async function getStream() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-                localStreamRef.current = stream
-                setLocalStream(stream)
-            } catch (err) {
-                console.error('Failed to get camera stream:', err)
-            }
-        }
-
-        getStream()
-
-        return () => {
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach(track => track.stop())
-            }
-        }
-    }, [])
 
 
     const createPeerConnection = useRef((playerId) => {
@@ -367,22 +338,13 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
 
     useEffect(() => {
         async function handleOffer(data) {
-            if (!localStreamRef.current) {
-                await new Promise(resolve => {
-                    const interval = setInterval(() => {
-                        if (localStreamRef.current) {
-                            clearInterval(interval)
-                            resolve()
-                        }
-                    }, 100)
-                })
-            }
-
             const pc = createPeerConnection(data.from)
 
-            localStreamRef.current.getTracks().forEach(track => {
-                pc.addTrack(track, localStreamRef.current)
-            })
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => {
+                    pc.addTrack(track, localStreamRef.current)
+                })
+            }
 
             await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
 
@@ -458,11 +420,11 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
 
     return (
         <div
-            className='relative color4 overflow-hidden'
+            className='relative color4'
             style={{
                 backgroundImage: `url(${HomeBackground})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
+                backgroundSize: '100% auto',
+                backgroundPosition: 'center center',
                 backgroundRepeat: 'no-repeat',
                 height: '100vh',
                 width: '100vw',
@@ -518,12 +480,14 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome }) {
                                 <div key={p.id} className='leading-none justify-center items-center'>
                                     <div className='flex flex-col justify-center items-center color4 rounded-b-2xl rounded-t-2xl' >
                                        <p className='p-1'>{p.username} - {p.score}</p> 
-                                        {p.id === socket.id 
-                                            ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/> 
+                                        {p.id === socket.id
+                                            ? localStream
+                                                ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/>
+                                                : <PlaceholderCam camWidth={miniCamWidth} camHeight={miniCamHeight}/>
                                             : remoteStreams[p.id]
                                                 ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                                : <PlaceholderCam name={p.username} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                        } 
+                                                : <PlaceholderCam camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                        }
                                     </div>
                                 </div>
                             ))}

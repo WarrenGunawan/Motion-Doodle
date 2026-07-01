@@ -1,7 +1,10 @@
-function PlaceholderCam({ name, camWidth, camHeight }) {
+import NoCameraImage from '../adrawn/NoCameraImage.png'
+
+
+function PlaceholderCam({ camWidth, camHeight }) {
     return (
-        <div style={{ width: camWidth, height: camHeight, background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', }}>
-            <p>{name}</p>
+        <div className='color4' style={{ width: camWidth, height: camHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', }}>
+            <img className='w-2/3' src={NoCameraImage} alt='Im Dead'/>
         </div>
     )
 }

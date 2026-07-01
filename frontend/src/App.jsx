@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Lobby from './Components/Lobby'
 import Home from './Components/Home'
 
@@ -21,9 +21,20 @@ function App() {
   const [ isHost, setIsHost ] = useState(false)
   const [ code, setCode ] = useState('')
 
-  const [players, setPlayers] = useState([])
+  const [ players, setPlayers ] = useState([])
+
+  const localStreamRef = useRef(null)
+  const [ localStream, setLocalStream ] = useState(null)
 
 
+  // Clean Up function for camera stream
+  useEffect(() => {
+    return () => {
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop())
+        }
+    }
+  }, [])
 
   // Checks for socket connection
   useEffect(() => {
@@ -64,8 +75,28 @@ function App() {
 
   return (
     <div>
-      {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} onStartLobby={setStartLobby} onJoinLobby={setJoinLobby} onIsHost={setIsHost} onSetCode={setCode} onSetUsername={setUsername} onSetPlayers={setPlayers}/>}
-      {screen === 'lobby' && <Lobby isHost={isHost} username={username} code={code} players={players} onSetPlayers={setPlayers} onMoveHome={moveToHome}/>}
+      {screen === 'home' && <Home onUsernameChosen={setUsernameChosen} 
+                              onStartLobby={setStartLobby} 
+                              onJoinLobby={setJoinLobby} 
+                              onIsHost={setIsHost} 
+                              onSetCode={setCode} 
+                              onSetUsername={setUsername} 
+                              onSetPlayers={setPlayers}
+                              localStream={localStream}
+                              setLocalStream={setLocalStream}
+                              localStreamRef={localStreamRef}
+                              />}
+
+      {screen === 'lobby' && <Lobby isHost={isHost} 
+                              username={username} 
+                              code={code} 
+                              players={players} 
+                              onSetPlayers={setPlayers} 
+                              onMoveHome={moveToHome}
+                              localStream={localStream}
+                              setLocalStream={setLocalStream}
+                              localStreamRef={localStreamRef}
+                              />}
     </div>
   )
 }
