@@ -40,7 +40,7 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
                 </div>
                 <div className='flex flex-col justify-center items-center pb-10'>
                     {isHost && <button className='opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color3 text-xl mb-2' onClick={() => {socket.emit('playAgain', { roomCode: code })}}>Play Again</button>}
-                    <button className='opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color3 text-xl' onClick={onMoveHome}>Return Home</button>
+                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 py-5 px-2 rounded-xl border-6 border-[#A3B18A] mx-3 text-xl' onClick={onMoveHome}>Return Home</button>
                 </div>
             </div>
         )
@@ -64,7 +64,7 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
                     <p className='text-4xl'>Rounds: {rounds}</p>
                     <input className='color3' type='range' id='numericSlider' min='1' max='6' value={rounds} onChange={(e) => {setRounds(Number(e.target.value))}}/>
                     <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color3 mx-3 text-xl' onClick={startGame}>Start Game</button>
-                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color3 mx-3 text-xl' onClick={onMoveHome}>Return Home</button>
+                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 py-5 px-2 rounded-xl border-6 border-[#A3B18A] mx-3 text-xl' onClick={onMoveHome}>Return Home</button>
                 </div>
             )
         } else {
@@ -80,7 +80,7 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
                         width: camWidth, 
                         height: camHeight
                     }}>
-                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 p-5 rounded-xl color3 mx-3 text-xl' onClick={onMoveHome}>Return Home</button>
+                    <button className='mt-2 opacity-100 active:opacity-50 transition-opacity hover:opacity-75 py-5 px-2 rounded-xl border-6 border-[#A3B18A] mx-3 text-xl' onClick={onMoveHome}>Return Home</button>
                 </div>
             )
         }

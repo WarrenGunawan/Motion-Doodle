@@ -29,6 +29,10 @@ body {
     background-color: #FFFFFF;
 }
 
+.color6 {
+    background-color: #EEEAE0
+}
+
 input[type=range] {
     accent-color: #FFFFFF;
 }

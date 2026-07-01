@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 
+import PaletteHeader from '../adrawn/PaletteHeader.png'
+
 const colors = {
     red: '#e81416',
     orange: '#ffa500',
@@ -17,7 +19,7 @@ const colors = {
 
 function BrushSettings({ brushColor, setBrushColor, brushSize, setBrushSize, eraserSize, setEraserSize, camWidth, camHeight }) {
     // Size of the button
-    const buttonDimension = camHeight / 8
+    const buttonDimension = camHeight / 10
     const panelWidth = camWidth * 0.2
     const sliderWidth = buttonDimension * 2.2
 
@@ -59,16 +61,19 @@ function BrushSettings({ brushColor, setBrushColor, brushSize, setBrushSize, era
 
 
     return (
-        <div className='flex flex-col justify-center items-center p-5'>
+        <div className='flex flex-col justify-center items-center w-50'>
+            <img className='w-2/3' src={PaletteHeader} alt='Palette'/>
+            <div className='w-3/4 h-1 color6 rounded-full my-2'/>
+
             <div className='grid grid-cols-2 gap-2'>
                 {Object.entries(colors).map(([ color, hexCode ]) => (
                     <button key={color} 
                         style={{ backgroundColor: brushColor === hexCode ? adjustHex(hexCode) : hexCode,
                                 borderColor: adjustHex(hexCode),
-                                width: buttonDimension, 
+                                width: buttonDimension* 1.2, 
                                 height: buttonDimension
                             }} 
-                        className='rounded border-2'
+                        className='rounded-xl border-2'
                         onClick={() => {
                             setBrushColor(hexCode)
                         }}
@@ -83,6 +88,8 @@ function BrushSettings({ brushColor, setBrushColor, brushSize, setBrushSize, era
             <div className='flex flex-row mx-5' style={{ width: sliderWidth, minWidth: 0 }} >
                 <input style={{ flex: 1, minWidth: 0, width: '100%'  }} type='range' id='numericSlider' min='5' max='50' value={eraserSize} onChange={(e) => {setEraserSize(Number(e.target.value))}}/>
             </div>
+
+            <div className='w-3/4 h-1 color6 rounded-full mt-2'/>
         </div>
     )
 }
