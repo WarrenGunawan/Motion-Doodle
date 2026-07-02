@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 
 import Camera from './Camera'
 import RemoteCam from './RemoteCam'
+import PlaceholderCam from './PlaceholderCam'
 
 import socket from '../socket'
 
@@ -88,21 +89,19 @@ function GameScreen({ camWidth, camHeight, localStream, isHost, gameStarted, cod
         if (drawer.id === socket.id) {
             return (
                 <div className='mr-5'>
-                    <Camera camWidth={camWidth} 
-                        camHeight={camHeight} 
-                        canDraw={true} stream={localStream} 
-                        onCompositeCanvas={onCompositeCanvas} 
-                        shouldClear={shouldClear}
-                        brushColor={brushColor}
-                        brushSize={brushSize}
-                        eraserSize={eraserSize}
-                    />
+                    {localStream 
+                        ? <Camera camWidth={camWidth} camHeight={camHeight} canDraw={true} stream={localStream} onCompositeCanvas={onCompositeCanvas} shouldClear={shouldClear} brushColor={brushColor} brushSize={brushSize} eraserSize={eraserSize}/>
+                        : <PlaceholderCam camWidth={camWidth} camHeight={camHeight}/>
+                    }
                 </div>
             )
         } else {
             return (
                 <div className='mr-5'>
-                    <RemoteCam stream={remoteStreams[drawer.id]} camWidth={camWidth} camHeight={camHeight}/>
+                    {remoteStreams[drawer.id]
+                        ? <RemoteCam stream={remoteStreams[drawer.id]} camWidth={camWidth} camHeight={camHeight}/>
+                        : <PlaceholderCam camWidth={camWidth} camHeight={camHeight}/>
+                    }
                 </div>
             )
         }

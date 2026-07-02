@@ -11,6 +11,8 @@ import socket from '../socket'
 
 import HomeBackground from '../adrawn/HomeBackground.png'
 import Logo from '../adrawn/Logo.png'
+import CopyLink from '../adrawn/CopyLink.png'
+import Check from '../adrawn/Check.png'
 
 
 function useWindowDimensions() {
@@ -44,9 +46,18 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
         return word.split('').map(char => char === ' ' ? ' ' : '_').join(' ')
     }
 
+    // Copy Link
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(code)
+        } catch(err) {
+            console.error("Failed to copy text: ", err);
+        }
+    }
 
     // WebRTC assets
     const peerConnectionsRef = useRef({})
+    const pendingIceCandidatesRef = useRef({})
     const drawerRef = useRef(null)
     const [ remoteStreams, setRemoteStreams ] = useState({})
 
@@ -62,6 +73,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
     const [ nextDrawerName, setNextDrawerName ] = useState('')
     const [ gameOver, setGameOver ] = useState(false)
     const [ finalScores, setFinalScores ] = useState([])
+    const [ correctGuessers, setCorrectGuessers ] = useState([])
 
     // Brush Settings
     const [ brushColor, setBrushColor ] = useState('#ffffff')
@@ -170,6 +182,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             onSetPlayers(data.players)
             setTransitioning(false)
             setCurrentWordPlaceholder(generatePlaceholder(data.word))
+            setCorrectGuessers([])
 
             if (oldDrawer?.id === socket.id && localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -200,6 +213,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setCurrentWordPlaceholder('')
             setGuessInput('')
             setHasGuessedCorrectly(false)
+            setCorrectGuessers([])
 
             if (localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -230,6 +244,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setTransitioning(false)
             setFinalScores([])
             setCurrentRound(1)
+            setCorrectGuessers([])
 
             if (!isHost) {
                 socket.emit('joinLobby', { username, roomCode: code })
@@ -238,6 +253,10 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
 
         function handleHostLeft() {
             onMoveHome()
+        }
+
+        function handleCorrectGuessersUpdated(data) {
+            setCorrectGuessers(data.correctGuessers)
         }
 
 
@@ -254,6 +273,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
         socket.on('error', handleError)
         socket.on('lobbyReset', handleLobbyReset)
         socket.on('hostLeft', handleHostLeft)
+        socket.on('correctGuessersUpdated', handleCorrectGuessersUpdated)
 
         return () => {
             socket.off('gameStarted', handleGameStart)
@@ -267,6 +287,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             socket.off('error', handleError)
             socket.off('lobbyReset', handleLobbyReset)
             socket.off('hostLeft', handleHostLeft)
+            socket.off('correctGuessersUpdated', handleCorrectGuessersUpdated)
         }
     }, [])
 
@@ -338,7 +359,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
 
     useEffect(() => {
         async function handleOffer(data) {
-            const pc = createPeerConnection(data.from)
+            const pc = peerConnectionsRef.current[data.from] || createPeerConnection(data.from)
 
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => {
@@ -348,6 +369,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
 
             await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
 
+            await flushPendingIceCandidates(data.from, pc)
 
             const answer = await pc.createAnswer()
             await pc.setLocalDescription(answer)
@@ -373,20 +395,50 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
 
         async function handleAnswer(data) {
             const pc = peerConnectionsRef.current[data.from]
+
             if (pc) {
                 await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
+
+                await flushPendingIceCandidates(data.from, pc)
             }
 
             console.log('received answer from:', data.from)
         }
 
         async function handleIceCandidate(data) {
+            const candidate = new RTCIceCandidate(data.candidate)
             const pc = peerConnectionsRef.current[data.from]
-            if (pc) {
-                await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+
+            if (!pc || !pc.remoteDescription) {
+                if (!pendingIceCandidatesRef.current[data.from]) {
+                    pendingIceCandidatesRef.current[data.from] = []
+                }
+
+                pendingIceCandidatesRef.current[data.from].push(candidate)
+                console.log('queued ICE candidate from:', data.from)
+                return
             }
 
-            console.log('received ice candidate from:', data.from)
+            try {
+                await pc.addIceCandidate(candidate)
+                console.log('received ice candidate from:', data.from)
+            } catch (err) {
+                console.error('Failed to add ICE candidate:', err)
+            }
+        }
+
+        async function flushPendingIceCandidates(playerId, pc) {
+            const pending = pendingIceCandidatesRef.current[playerId] || []
+
+            for (const candidate of pending) {
+                try {
+                    await pc.addIceCandidate(candidate)
+                } catch (err) {
+                    console.error('Failed to add queued ICE candidate:', err)
+                }
+            }
+
+            pendingIceCandidatesRef.current[playerId] = []
         }
 
         socket.on('offer', handleOffer)
@@ -432,11 +484,11 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             }}
         >
             <div className='absolute top-0 right-0 color3 pl-5 pb-5 rounded-bl-3xl z-30'>
-                <p
-                    className='text-3xl color4 px-5 py-3'
-                    style={{ borderBottomLeftRadius: '12px' }}
-                >
-                    Room Code: {code}
+                <p className='flex flex-row justify-center items-center text-3xl color4 px-5 py-3' style={{ borderBottomLeftRadius: '12px' }}>
+                    Code: {code}
+                    <button className='opacity-100 active:opacity-50 transition-opacity hover:opacity-75' onClick={handleCopy}>
+                        <img className='ml-1 w-10' src={CopyLink} alt='copy'/>
+                    </button>
                 </p>
             </div>
 
@@ -478,16 +530,27 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
                         <div className='flex flex-col color3 p-5 rounded-3xl gap-3'>
                             {players.map(p => (
                                 <div key={p.id} className='leading-none justify-center items-center'>
-                                    <div className='flex flex-col justify-center items-center color4 rounded-b-2xl rounded-t-2xl' >
-                                       <p className='p-1'>{p.username} - {p.score}</p> 
-                                        {p.id === socket.id
-                                            ? localStream
-                                                ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/>
-                                                : <PlaceholderCam camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                            : remoteStreams[p.id]
-                                                ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                                : <PlaceholderCam camWidth={miniCamWidth} camHeight={miniCamHeight}/>
-                                        }
+                                    <div className='flex flex-col justify-center items-center color4 rounded-b-2xl rounded-t-2xl'>
+                                        <p className='p-1'>{p.username} - {p.score}</p>
+
+                                        <div className='relative'>
+                                            {p.id === socket.id
+                                                ? localStream
+                                                    ? <LocalCam camWidth={miniCamWidth} camHeight={miniCamHeight} stream={localStream}/>
+                                                    : <PlaceholderCam camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                                : remoteStreams[p.id]
+                                                    ? <RemoteCam stream={remoteStreams[p.id]} camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                                    : <PlaceholderCam camWidth={miniCamWidth} camHeight={miniCamHeight}/>
+                                            }
+
+                                            {correctGuessers.includes(p.id) && (
+                                                <img
+                                                    src={Check}
+                                                    alt='Correct'
+                                                    className='absolute top-0 left-0 w-7 h-7 z-20'
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
