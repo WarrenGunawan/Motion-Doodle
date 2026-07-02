@@ -255,6 +255,9 @@ def handleCorrectGuess(data):
         return
 
     lobby['correctGuessers'].add(player_id)
+    socketio.emit('correctGuessersUpdated', {
+        'correctGuessers': list(lobby['correctGuessers'])
+    }, room=code)
 
     points = round(((lobby['timeLeft'] / 60) * 450) + 50)
     addScore(code, player_id, points)
