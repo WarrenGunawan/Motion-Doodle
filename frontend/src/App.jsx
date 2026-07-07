@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import Lobby from './Components/Lobby'
 import Home from './Components/Home'
+import Loading from './Components/LoadingScreen'
 
 import socket from './socket'
 
 
 
 
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 
 
@@ -25,6 +30,9 @@ function App() {
 
   const localStreamRef = useRef(null)
   const [ localStream, setLocalStream ] = useState(null)
+
+  const [ loadingMounted, setLoadingMounted ] = useState(false)
+  const [ loadingShown, setLoadingShown ] = useState(false) 
 
 
   // Clean Up function for camera stream
@@ -56,13 +64,29 @@ function App() {
   }, [startLobby, joinLobby, userNameChosen])
 
 
-  // Helper Functions
+  // Transition Functions
+  async function transitionToScreen(nextScreen) {
+    setLoadingMounted(true)
+
+    await wait(20)
+    setLoadingShown(true)
+
+    await wait(500)
+    setScreen(nextScreen)
+
+    await wait(2000)
+    setLoadingShown(false)
+
+    await wait(500)
+    setLoadingMounted(false)
+  }
+
   function moveToLobby() {
-    setScreen('lobby')
+    transitionToScreen('lobby')
   }
 
   function moveToHome() {
-    setScreen('home')
+    transitionToScreen('home')
     setPlayers([])
     setCode('')
     setUsername('')
@@ -97,6 +121,8 @@ function App() {
                               setLocalStream={setLocalStream}
                               localStreamRef={localStreamRef}
                               />}
+
+      {loadingMounted && <Loading show={loadingShown} />}
     </div>
   )
 }

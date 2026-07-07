@@ -309,7 +309,7 @@ def handleCorrectGuess(data):
         def delayed_advance():
             advanceTurn(code)
 
-        threading.Timer(3.0, delayed_advance).start()
+        threading.Timer(5.0, delayed_advance).start()
 
 
 
