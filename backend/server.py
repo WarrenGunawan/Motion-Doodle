@@ -200,19 +200,31 @@ def advanceTurn(code):
             }, room=code)
             return
 
-    lobbies[code]['drawerIndex'] = next_index
-    word = random.choice(WORDS)
-    lobbies[code]['currentWord'] = word
-    lobbies[code]['correctGuessers'] = set()
+    next_drawer = players[next_index]
 
-    socketio.emit('nextTurn', {
-        'drawer': players[next_index],
-        'word': word,
-        'players': players,
-        'currentRound': lobbies[code]['currentRound']
+    socketio.emit('roundEnding', {
+        'nextDrawer': next_drawer
     }, room=code)
 
-    startTurnTimer(code)
+    def delayed_next_turn():
+        if code not in lobbies:
+            return
+        
+        lobbies[code]['drawerIndex'] = next_index
+        word = random.choice(WORDS)
+        lobbies[code]['currentWord'] = word
+        lobbies[code]['correctGuessers'] = set()
+
+        socketio.emit('nextTurn', {
+            'drawer': players[next_index],
+            'word': word,
+            'players': players,
+            'currentRound': lobbies[code]['currentRound']
+        }, room=code)
+
+        startTurnTimer(code)
+
+    threading.Timer(5.0, delayed_next_turn).start()
 
 
 @socketio.on('startGame')
@@ -300,16 +312,7 @@ def handleCorrectGuess(data):
 
             return
 
-        next_drawer = players[next_index]
-
-        socketio.emit('roundEnding', {
-            'nextDrawer': next_drawer
-        }, room=code)
-
-        def delayed_advance():
-            advanceTurn(code)
-
-        threading.Timer(5.0, delayed_advance).start()
+        advanceTurn(code)
 
 
 
