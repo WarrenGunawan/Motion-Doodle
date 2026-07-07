@@ -4,6 +4,7 @@ import Home from './Components/Home'
 import Loading from './Components/LoadingScreen'
 
 import socket from './socket'
+import sounds, { fadeIn, fadeOut } from './sounds'
 
 
 
@@ -94,6 +95,8 @@ function App() {
     setStartLobby(false)
     setJoinLobby(false)
     setIsHost(false)
+
+    fadeOut(sounds.background)
   }
 
 

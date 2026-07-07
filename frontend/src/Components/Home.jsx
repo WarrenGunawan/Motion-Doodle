@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 
 import socket from '../socket'
 
+import sounds, { fadeIn, fadeOut } from '../sounds'
+
 import LocalCam from './LocalCam';
 import PlaceholderCam from './PlaceholderCam';
 
@@ -107,12 +109,14 @@ function Home({onUsernameChosen, onStartLobby, onJoinLobby, onIsHost, onSetCode,
 
     function checkStartLobby() {
         onIsHost(true)
+        fadeIn(sounds.background)
 
         createdLobby(username)
     }
 
     function checkJoinLobby() {
         onIsHost(false)
+        sounds.background.play()
 
         if(username) {
             joinedLobby(username, code)

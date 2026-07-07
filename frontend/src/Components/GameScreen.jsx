@@ -5,6 +5,7 @@ import RemoteCam from './RemoteCam'
 import PlaceholderCam from './PlaceholderCam'
 
 import socket from '../socket'
+import sounds from '../sounds'
 
 import PreGameScreen from '../adrawn/PreGameScreen.png'
 

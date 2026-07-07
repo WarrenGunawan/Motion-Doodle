@@ -8,6 +8,7 @@ import GameScreen from './GameScreen';
 import BrushSettings from './BrushSettings';
 
 import socket from '../socket'
+import sounds from '../sounds'
 
 import HomeBackground from '../adrawn/HomeBackground.png'
 import Logo from '../adrawn/Logo.png'
@@ -59,6 +60,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
     const peerConnectionsRef = useRef({})
     const pendingIceCandidatesRef = useRef({})
     const drawerRef = useRef(null)
+    const gameOverRef = useRef(null)
     const [ remoteStreams, setRemoteStreams ] = useState({})
 
     // Game Logic
@@ -81,15 +83,16 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
     const [ eraserSize, setEraserSize ] = useState(50)
 
    function handleGuess(guess) {
-    console.log('guess:', guess, 'currentWord:', currentWord)
-    if (guess.trim().toLowerCase() !== currentWord.toLowerCase()) {
-        setGuessInput('')
-    } else {
-        console.log('correct! emitting correctGuess')
-        setHasGuessedCorrectly(true)
-        socket.emit('correctGuess', { roomCode: code })
+        console.log('guess:', guess, 'currentWord:', currentWord)
+        if (guess.trim().toLowerCase() !== currentWord.toLowerCase()) {
+            setGuessInput('')
+            sounds.enterGuess.play()
+        } else {
+            console.log('correct! emitting correctGuess')
+            setHasGuessedCorrectly(true)
+            socket.emit('correctGuess', { roomCode: code })
+        }
     }
-}
 
 
 
@@ -162,10 +165,15 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setDrawer(data.drawer)
             drawerRef.current = data.drawer
             setCurrentWordPlaceholder(generatePlaceholder(data.word))
+
+            sounds.background.pause()
+            sounds.newRound.play()
+            sounds.background.play()
         }
 
         function handleScoresUpdated(data) {
             onSetPlayers(data.players)
+            sounds.correctGuess.play()
         }
 
         function handleNextTurn(data) {
@@ -184,6 +192,13 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setCurrentWordPlaceholder(generatePlaceholder(data.word))
             setCorrectGuessers([])
 
+            if(!gameOverRef.current) {
+                sounds.background.pause()
+                sounds.newRound.play()
+                sounds.background.play()
+            }
+
+
             if (oldDrawer?.id === socket.id && localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
                     const sender = pc.getSenders().find(s => s.track?.kind === 'video')
@@ -201,6 +216,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
 
         function handleGameOver(data) {
             setGameOver(true)
+            gameOverRef.current = true
             setGameStarted(false)
             setFinalScores(data.players)
             onSetPlayers(data.players)
@@ -214,6 +230,9 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setGuessInput('')
             setHasGuessedCorrectly(false)
             setCorrectGuessers([])
+
+            sounds.gameEnding.play()
+            
 
             if (localStreamRef.current) {
                 Object.values(peerConnectionsRef.current).forEach(pc => {
@@ -233,6 +252,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             onSetPlayers(data.players)
             setGameStarted(false)
             setGameOver(false)
+            gameOverRef.current = false
             setDrawer(null)
             drawerRef.current = null
             setCurrentWord('')
@@ -249,6 +269,8 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             if (!isHost) {
                 socket.emit('joinLobby', { username, roomCode: code })
             }
+
+            fadeOut(sounds.background)
         }
 
         function handleHostLeft() {
