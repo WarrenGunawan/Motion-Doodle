@@ -71,7 +71,10 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
     const [ timeLeft, setTimeLeft ] = useState(null)
     const [ guessInput, setGuessInput] = useState('')
     const [ hasGuessedCorrectly, setHasGuessedCorrectly ] = useState(false)
-    const [ transitioning, setTransitioning ] = useState(false)
+    const [ transitionPhase, setTransitionPhase ] = useState('idle') // 'idle' | 'entering' | 'visible' | 'exiting'
+    const [ transitionContent, setTransitionContent ] = useState('drawer') // 'round' | 'drawer' | 'gameover'
+    const [ skipTransition, setSkipTransition ] = useState(false)
+    const [ nextRound, setNextRound ] = useState(null)
     const [ nextDrawerName, setNextDrawerName ] = useState('')
     const [ gameOver, setGameOver ] = useState(false)
     const [ finalScores, setFinalScores ] = useState([])
@@ -100,40 +103,6 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
     useEffect(() => {
         async function handlePlayerJoined(data) {
             onSetPlayers(data.players)
-
-            const newPlayer = data.players[data.players.length - 1]
-            if (newPlayer.id === socket.id) return
-
-            const pc = createPeerConnection(newPlayer.id)
-
-            if (localStreamRef.current && localStreamRef.current.getVideoTracks().length > 0) {
-                localStreamRef.current.getTracks().forEach(track => {
-                    pc.addTrack(track, localStreamRef.current)
-                })
-            } else {
-                pc.addTransceiver('video', { direction: 'recvonly' })
-            }
-
-            const offer = await pc.createOffer()
-            await pc.setLocalDescription(offer)
-
-            await new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') {
-                    resolve()
-                } else {
-                    pc.onicegatheringstatechange = () => {
-                        if (pc.iceGatheringState === 'complete') resolve()
-                    }
-                }
-            })
-
-            socket.emit('offer', {
-                to: newPlayer.id,
-                from: socket.id,
-                offer: pc.localDescription
-            })
-
-            console.log('player joined, sending offer to:', newPlayer.id)
         }
 
         function handlePlayerLeft(data) {
@@ -188,7 +157,15 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setShouldClearCanvas(true)
             setTimeout(() => setShouldClearCanvas(false), 100)
             onSetPlayers(data.players)
-            setTransitioning(false)
+            setTransitionPhase('exiting')
+            setTimeout(() => {
+                setSkipTransition(true)
+                setTransitionPhase('idle')
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => setSkipTransition(false))
+                })
+            }, 500)
+
             setCurrentWordPlaceholder(generatePlaceholder(data.word))
             setCorrectGuessers([])
 
@@ -210,18 +187,48 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
         }
 
         function handleRoundEnding(data) {
-            setTransitioning(true)
+            setNextRound(data.nextRound)
             setNextDrawerName(data.nextDrawer.username)
+
+            setTransitionPhase('entering')
+
+            if(data.isNewRound) {
+                setTimeout(() => {
+                    setTransitionContent('round')
+                }, 500)
+
+                setTimeout(() => {
+                    setTransitionContent('drawer')
+                }, 3000)
+            } else {
+                setTimeout(() => {
+                    setTransitionContent('drawer')
+                }, 500)
+            }
         }
 
         function handleGameOver(data) {
-            setGameOver(true)
-            gameOverRef.current = true
-            setGameStarted(false)
             setFinalScores(data.players)
             onSetPlayers(data.players)
 
-            setTransitioning(false)
+            setTransitionPhase('entering')
+            setTransitionContent('gameover')
+
+            setTimeout(() => {
+                setTransitionPhase('exiting')
+                setGameOver(true)
+                gameOverRef.current = true
+                setGameStarted(false)
+            }, 3500)
+
+            setTimeout(() => {
+                setSkipTransition(true)
+                setTransitionPhase('idle')
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => setSkipTransition(false))
+                })
+            }, 4000)
+
             setNextDrawerName('')
 
             setTimeLeft('00')
@@ -261,7 +268,7 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             setGuessInput('')
             setHasGuessedCorrectly(false)
             setShouldClearCanvas(false)
-            setTransitioning(false)
+            setTransitionPhase('idle')
             setFinalScores([])
             setCurrentRound(1)
             setCorrectGuessers([])
@@ -335,7 +342,44 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
     const miniCamWidth = Math.round(miniCamHeight * (16 / 9))
 
 
+    async function sendOfferToPlayer(playerId) {
+        if (playerId === socket.id) return
 
+        let pc = peerConnectionsRef.current[playerId]
+
+        if (!pc) {
+            pc = createPeerConnection(playerId)
+
+            if (localStreamRef.current && localStreamRef.current.getVideoTracks().length > 0) {
+                localStreamRef.current.getTracks().forEach(track => {
+                    pc.addTrack(track, localStreamRef.current)
+                })
+            } else {
+                pc.addTransceiver('video', { direction: 'recvonly' })
+            }
+        }
+
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+
+        await new Promise(resolve => {
+            if (pc.iceGatheringState === 'complete') {
+                resolve()
+            } else {
+                pc.onicegatheringstatechange = () => {
+                    if (pc.iceGatheringState === 'complete') resolve()
+                }
+            }
+        })
+
+        socket.emit('offer', {
+            to: playerId,
+            from: socket.id,
+            offer: pc.localDescription
+        })
+
+        console.log('peer ready, sending offer to:', playerId)
+    }
 
 
     const createPeerConnection = useRef((playerId) => {
@@ -463,16 +507,26 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
             pendingIceCandidatesRef.current[playerId] = []
         }
 
+        function handlePeerReady(data) {
+            sendOfferToPlayer(data.playerId)
+        }
+
         socket.on('offer', handleOffer)
         socket.on('answer', handleAnswer)
         socket.on('iceCandidate', handleIceCandidate)
+        socket.on('peerReady', handlePeerReady)
 
         return () => {
             socket.off('offer', handleOffer)
             socket.off('answer', handleAnswer)
             socket.off('iceCandidate', handleIceCandidate)
+            socket.off('peerReady', handlePeerReady)
         }
     }, [])
+
+    useEffect(() => {
+        socket.emit('readyForWebRTC', { roomCode: code })
+    }, [code])
 
 
 
@@ -607,8 +661,6 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
                                     eraserSize={eraserSize}
                                     onMoveHome={onMoveHome}
                                 />
-
-                                {transitioning && (
                                     <div
                                         style={{
                                             position: 'absolute',
@@ -622,12 +674,18 @@ function Lobby({ isHost, username, code, players, onSetPlayers, onMoveHome, loca
                                             alignItems: 'center',
                                             color: 'white',
                                             fontSize: '1.5rem',
-                                            borderRadius: '16px'
+                                            borderRadius: '16px',
+                                            transform: transitionPhase === 'idle' ? 'translateY(-100%)' 
+                                                    : transitionPhase === 'exiting' ? 'translateY(100%)' 
+                                                    : 'translateY(0%)',
+                                            transition: skipTransition ? 'none' : 'transform 500ms ease',
+                                            pointerEvents: 'none'
                                         }}
                                     >
-                                        {nextDrawerName} is drawing next!
+                                        {transitionContent === 'round' && <p>Round {nextRound}</p>}
+                                        {transitionContent === 'drawer' && <p>{nextDrawerName} is drawing next!</p>}
+                                        {transitionContent === 'gameover' && <p>Game Over!</p>}
                                     </div>
-                                )}
                             </div>
 
                             <BrushSettings 

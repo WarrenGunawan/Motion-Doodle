@@ -203,7 +203,9 @@ def advanceTurn(code):
     next_drawer = players[next_index]
 
     socketio.emit('roundEnding', {
-        'nextDrawer': next_drawer
+        'nextDrawer': next_drawer,
+        'nextRound': lobbies[code]['currentRound'],
+        'isNewRound': next_index == 0
     }, room=code)
 
     def delayed_next_turn():
@@ -329,6 +331,17 @@ def handleAnswer(data):
 @socketio.on('iceCandidate')
 def handleIceCandidate(data):
     socketio.emit('iceCandidate', data, to=data['to'])
+
+@socketio.on('readyForWebRTC')
+def handleReadyForWebRTC(data):
+    code = data.get('roomCode')
+
+    if code not in lobbies:
+        return
+
+    socketio.emit('peerReady', {
+        'playerId': request.sid
+    }, room=code, include_self=False)
 
 
 
