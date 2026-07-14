@@ -1,3 +1,23 @@
 {
-    "default": ["Elephant", "Volcano", "Guitar", "Astronaut", "BasketBall", "Microwave", "Apple"]
+    "default": ["Elephant", "Penguin", "Panda", "Snake", "Fish", "Snail", "Butterfly", "Dog", "Cat", "Chicken", 
+                "Bat", "Whale", "Alien", "Monkey", "Pikachu", 
+    
+                "Volcano", "Texas", "China", "Skyscraper",
+            
+                "Guitar", "Harp", "Drums", "Trombone", "Gong", "Harmonica", "Cello",
+                
+                "Astronaut", "Superman", "Statue of Liberty", "Nerd", "Martin Luther King Jr", "Peter Griffin", 
+                "Police Officer", "Tung Tung Tung Sahur",
+                
+                "BasketBall", "Golf", "Swimming", "Ping Pong",
+                
+                "Microwave", "Toilet", "Toaster", "Washing Machine",
+                
+                "Apple", "Pickle", "Fried Rice", "Spaghetti", "Steak", "Pizza", "Lollipop",
+                
+                "Sunglasses", "Shoe", "Mohawk", "Face", "Mustache", "Eyebrows", "Smile", "Tongue", "Fart",
+
+                "Car", "Bus", "Train", "Plane", "Helicopter", "Tricycle",
+            
+                "Youtube", "Trophy", "Poop", "Video Game", "Campfire", "Crown"]
 }
