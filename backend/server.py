@@ -16,7 +16,7 @@ socketio = SocketIO(
         "http://127.0.0.1:5173",
         "https://doodlecam.vercel.app"
     ],
-    async_mode="gevent"
+    async_mode="eventlet"
 )
 
 lobbies = {}
