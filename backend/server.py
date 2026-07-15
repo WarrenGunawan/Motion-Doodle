@@ -13,7 +13,7 @@ app.config['SECRET_KEY'] = 'secret'
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    cors_allowed_origins="https://doodlecam.vercel.app/",
     async_mode="eventlet"
 )
 
