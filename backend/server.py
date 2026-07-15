@@ -1,6 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
@@ -14,9 +11,7 @@ app.config['SECRET_KEY'] = 'secret'
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[
-        "*"
-    ],
+    cors_allowed_origins="*",
     async_mode="eventlet"
 )
 
