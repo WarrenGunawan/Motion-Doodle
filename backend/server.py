@@ -1,13 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
-from flask import Flask, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
-import random
-import string
-import json
-import threading
-
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
