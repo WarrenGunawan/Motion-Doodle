@@ -12,12 +12,10 @@ app.config['SECRET_KEY'] = 'secret'
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://doodlecam.vercel.app"
-    ],
-    async_mode="eventlet"
+    cors_allowed_origins="*",
+    async_mode="eventlet",
+    logger=True,
+    engineio_logger=True
 )
 
 lobbies = {}
@@ -26,6 +24,15 @@ with open('words.json') as f:
     wordsData = json.load(f)
 
 WORDS = wordsData['default']
+
+
+@app.route("/")
+def home():
+    return "DoodleCam backend is running"
+
+@app.route("/health")
+def health():
+    return {"status": "ok"}
 
 
 # Helper Functions
