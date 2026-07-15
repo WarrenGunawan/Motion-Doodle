@@ -16,7 +16,7 @@ socketio = SocketIO(
         "http://127.0.0.1:5173",
         "http://192.168.68.77:5173"
     ],
-    async_mode="threading"
+    async_mode="eventlet"
 )
 
 lobbies = {}
