@@ -1,12 +1,10 @@
-import eventlet
-eventlet.monkey_patch()
-
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import string
 import json
 import random
+import threading
 import os
 
 app = Flask(__name__)
@@ -14,10 +12,12 @@ app.config['SECRET_KEY'] = 'secret'
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
-    async_mode="eventlet",
-    logger=True,
-    engineio_logger=True
+    cors_allowed_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://doodlecam.vercel.app"
+    ],
+    async_mode="threading"
 )
 
 lobbies = {}
@@ -188,9 +188,9 @@ def startTurnTimer(code):
         if lobbies[code]['timeLeft'] <= 0:
             advanceTurn(code)
         else:
-            eventlet.spawn_after(1.0, tick)
+            threading.Timer(1.0, tick).start()
 
-    eventlet.spawn_after(1.0, tick)
+    threading.Timer(1.0, tick).start()
 
 
 def advanceTurn(code):
@@ -236,7 +236,7 @@ def advanceTurn(code):
 
         startTurnTimer(code)
 
-    eventlet.spawn_after(5.0, delayed_next_turn)
+    threading.Timer(5.0, delayed_next_turn).start()
 
 
 @socketio.on('startGame')
