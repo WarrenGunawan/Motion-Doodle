@@ -1,10 +1,12 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import string
 import json
 import random
-import threading
 import os
 
 app = Flask(__name__)
@@ -186,9 +188,9 @@ def startTurnTimer(code):
         if lobbies[code]['timeLeft'] <= 0:
             advanceTurn(code)
         else:
-            threading.Timer(1.0, tick).start()
+            eventlet.spawn_after(1.0, tick)
 
-    threading.Timer(1.0, tick).start()
+    eventlet.spawn_after(1.0, tick)
 
 
 def advanceTurn(code):
@@ -234,7 +236,7 @@ def advanceTurn(code):
 
         startTurnTimer(code)
 
-    threading.Timer(5.0, delayed_next_turn).start()
+    eventlet.spawn_after(5.0, delayed_next_turn)
 
 
 @socketio.on('startGame')
