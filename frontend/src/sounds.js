@@ -1,15 +1,9 @@
-import BackgroundMusic from './adrawn/BackgroundMusic.mp3'
-import NewRound from './adrawn/NewRound.mp3'
-import CorrectGuess from './adrawn/CorrectGuess.mp3'
-import EnterGuess from './adrawn/EnterGuess.mp3'
-import GameEnding from './adrawn/GameEnding.mp3'
-
 const sounds = {
-    background: new Audio(BackgroundMusic),
-    newRound: new Audio(NewRound),
-    correctGuess: new Audio(CorrectGuess),
-    enterGuess: new Audio(EnterGuess),
-    gameEnding: new Audio(GameEnding),
+    background: new Audio('/sounds/BackgroundMusic.mp3'),
+    newRound: new Audio('/sounds/NewRound.mp3'),
+    correctGuess: new Audio('/sounds/CorrectGuess.mp3'),
+    enterGuess: new Audio('/sounds/EnterGuess.mp3'),
+    gameEnding: new Audio('/sounds/GameEnding.mp3'),
 }
 
 
