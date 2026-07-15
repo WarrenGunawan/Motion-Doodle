@@ -1,3 +1,5 @@
+import eventlet
+
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
